@@ -1,5 +1,5 @@
-#define bTagJF_cxx
-#include "bTagJF.h"
+
+
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -25,10 +25,13 @@ const Float_t FCal_range[] = {0, 0.063719, 0.14414, 0.289595, 0.525092, 0.87541,
 
 const float Weight[] = {6.7890E+07, 6.789E+07, 6.3996E+05, 4.7195E+03, 2.6602E+01, 2.2476E-01};
 const float Filter[] = {9.9713E-01, 2.8748E-03, 4.2952E-03, 5.2994E-03, 4.5901E-03, 2.1846E-03};
+const int grid_size = sizeof(Weight)/sizeof(float);
 const int myColor[] = {kBlue, kViolet, kMagenta, kPink, kOrange, kYellow, kSpring, kTeal, kCyan, kAzure, kGray, kGray + 1, kGray + 3};
 const int cet[] = {0, 2, 2, 5, 5, 8}; //selected centrality sections
 const int cet_N = (sizeof(cet) / sizeof(int)) / 2;
-
+const bool PbPb =  true;
+char Type[2][10]={"pp","PbPb"};
+const char* dataType = "WorkingDefaultpp";
 Float_t Eta_range[] = {-2.1, -1.5, -0.9, -0.3, 0.3, 0.9, 1.5, 2.1};
 const int Eta_N = sizeof(Eta_range) / sizeof(float) - 1;
 
@@ -110,6 +113,11 @@ void initBranches(TChain *myChain)
    myChain->SetBranchStatus("truth_PVy", 1);
    myChain->SetBranchStatus("truth_PVz", 1);
 
+   myChain->SetBranchStatus("jet_bH_pdgId", 1);
+   myChain->SetBranchStatus("jet_cH_pdgId", 1);
+   myChain->SetBranchStatus("jet_bH_Lxy", 1);
+   myChain->SetBranchStatus("jet_cH_Lxy", 1);
+
    myChain->SetBranchStatus("jet_bH_x", 1);
    myChain->SetBranchStatus("jet_bH_y", 1);
    myChain->SetBranchStatus("jet_bH_z", 1);
@@ -150,8 +158,10 @@ void bTagJF_grid()
       distbins[i] = TMath::Power(TMath::E(), initialdist);
       initialdist = initialdist + incredist;
    }
+std::string chain_name = "bTag_AntiKt4HIJets";
+	TChain *myChain = new TChain(chain_name.c_str());
 
-  std::ifstream file("/usatlas/u/cher97/GetStuff/WorkingDefaultPbPb.txt");
+  std::ifstream file("/usatlas/u/cher97/GetStuff/test.txt");
   std::string line;
   while (std::getline(file, line))
     {
@@ -161,17 +171,29 @@ void bTagJF_grid()
       std::string fileName;
       while (std::getline(linestream, item, '|'))
         {
-	  std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
-	  item.erase(end_pos, item.end());
-
+	  
 	  //	  std::cout <<  item << " linePos " << linePos << endl;
 	  if (linePos == 5) {
-	    fileName = item;
-	    if (fileName.find(".root") == std::string::npos) break;  
+	    if (item.find("REPLICA") !=std::string::npos) continue;
+std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
+	  item.erase(end_pos, item.end());
+	  //cout << end_pos << endl;
+	cout << item << endl;
+	  int start_pos = item.find_last_of("=");
+	  cout << start_pos << endl;
+	    fileName = item.substr(start_pos + 1, item.length()-start_pos-1);
+cout << fileName << endl;
+
+	    if (fileName.find(".root") == std::string::npos) {
        cout << fileName << "file missing" << endl; 
-       if (fileName.find("user.xiaoning") == std::string::npos) break; 
+	return;  
+}
+       if (fileName.find("user.xiaoning") == std::string::npos) { 
        cout << fileName << "file missing" << endl; 
-       myChain->Add(fileName);
+break;
+}
+cout << fileName << endl;       
+myChain->Add(fileName.c_str());
 
 	  }
 	  ++linePos;
@@ -179,6 +201,33 @@ void bTagJF_grid()
     }    
 
   file.close(); 
+
+   int JZ_ID[grid_size];
+
+std::ifstream filej("/usatlas/u/cher97/GetStuff/test.txt");
+  std::string linej;
+  while (std::getline(filej, linej)){
+      std::stringstream linestreamj(linej);
+      std::string itemj;
+      int linePosj = 0;
+      std::string id;
+      while (std::getline(linestreamj, itemj, ' ')){
+      if (itemj == "") continue;
+if (itemj.find(dataType)==std::string::npos) continue;
+if (linePosj == 0) id = item;
+if (linePosj == 4){
+  int k = itemj.find("JZ");
+		if (k==std::string::npos) {
+			cout << "Wrong name" << itemj << endl;
+			break;	
+		}
+JZ_ID[itemj[k+2]-48] = std::stoi(ID);
+}
+}
+++linePosj;
+}
+
+
 
    std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
@@ -188,13 +237,19 @@ void bTagJF_grid()
    std::vector<int> *jet_truthMatch = 0;
    Int_t njets = 0;
    Int_t eventnb = 0;
+   Int_t runnb = 0;
    Float_t Fcal = 0.;
    Float_t truth_PVx;
    Float_t truth_PVy;
    Float_t truth_PVz;
 
+   Float_t PVx;
+   Float_t PVy;
+   Float_t PVz;
+
    std::vector<float> *jet_truthPt = 0;
    std::vector<float> *jet_truthEta = 0;
+   std::vector<float> *jet_m = 0;
 
    std::vector<float> *jet_dRminToT = 0;
    std::vector<float> *jet_dRminToC = 0;
@@ -203,6 +258,11 @@ void bTagJF_grid()
    std::vector<std::vector<float>> *jet_bH_prod_x = 0;
    std::vector<std::vector<float>> *jet_bH_prod_y = 0;
    std::vector<std::vector<float>> *jet_bH_prod_z = 0;
+
+   std::vector<std::vector<float>> *jet_bH_Lxy = 0;
+   std::vector<std::vector<float>> *jet_cH_Lxy = 0;
+   std::vector<std::vector<float>> *jet_bH_pdgId = 0;
+   std::vector<std::vector<float>> *jet_cH_pdgId = 0;
 
    std::vector<float> *jet_jf_m = 0;
 
@@ -221,9 +281,8 @@ void bTagJF_grid()
 
    std::vector<int> *jet_btag_ntrk = 0;
    vector<vector<int>> *jet_trk_orig = 0;
-   ;
 
-   TBranch *b_jet_pt, *b_jet_eta, *b_jet_truthMatch, *b_njets, *b_eventnb, *b_Fcal, *b_truth_PVx, *b_truth_PVy, *b_truth_PVz, *b_jet_truthEta, *b_jet_truthPt, *b_jet_dRminToB, *b_jet_dRminToC, *b_jet_dRminToT, *b_jet_bH_prod_x, *b_jet_bH_prod_y, *b_jet_bH_prod_z, *b_jet_jf_m, *b_jet_bH_x, *b_jet_bH_y, *b_jet_bH_z, *b_jet_jf_nvtx, *b_jet_jf_vtx_L3D, *b_closestVtx_L3D, *b_jet_jf_vtx_x, *b_jet_jf_vtx_y, *b_jet_jf_vtx_z, *b_jet_btag_ntrk, *b_jet_trk_orig;
+   TBranch *b_jet_pt, *b_jet_eta, *b_runnb, *b_PVx, *b_PVy, *b_PVz, *b_jet_bH_pdgId, *b_jet_cH_pdgId, *b_bH_Lxy, *b_cH_Lxy, *b_jet_m, *b_jet_truthMatch, *b_njets, *b_eventnb, *b_Fcal, *b_truth_PVx, *b_truth_PVy, *b_truth_PVz, *b_jet_truthEta, *b_jet_truthPt, *b_jet_dRminToB, *b_jet_dRminToC, *b_jet_dRminToT, *b_jet_bH_prod_x, *b_jet_bH_prod_y, *b_jet_bH_prod_z, *b_jet_jf_m, *b_jet_bH_x, *b_jet_bH_y, *b_jet_bH_z, *b_jet_jf_nvtx, *b_jet_jf_vtx_L3D, *b_closestVtx_L3D, *b_jet_jf_vtx_x, *b_jet_jf_vtx_y, *b_jet_jf_vtx_z, *b_jet_btag_ntrk, *b_jet_trk_orig;
 
    /*TBranch* b_mcwg;
 	Float_t mcwg = 0;
@@ -238,6 +297,11 @@ void bTagJF_grid()
    myChain->SetBranchAddress("eventnb", &eventnb, &b_eventnb);
 
    myChain->SetBranchAddress("Fcal", &Fcal, &b_Fcal);
+
+   myChain->SetBranchAddress("jet_bH_pdgId", &jet_bH_pdgId, &b_jet_bH_pdgId);
+   myChain->SetBranchAddress("jet_cH_pdgId", &jet_cH_pdgId, &b_jet_cH_pdgId);
+   myChain->SetBranchAddress("jet_bH_Lxy", &jet_bH_Lxy, &b_jet_bH_Lxy);
+   myChain->SetBranchAddress("jet_cH_Lxy", &jet_cH_Lxy, &b_jet_cH_Lxy);
 
    myChain->SetBranchAddress("jet_jf_nvtx", &jet_jf_nvtx, &b_jet_jf_nvtx);
    myChain->SetBranchAddress("jet_jf_vtx_L3D", &jet_jf_vtx_L3D, &b_jet_jf_vtx_L3D);
@@ -375,14 +439,29 @@ void bTagJF_grid()
       			cout << "invalid index" << endl;
       		break;
     		}
+		
+		if (jentry0 == 100000) break;
+
 		fname = myChain->GetCurrentFile()->GetName();
 		//cout << fname << endl;
-		int k = fname.find("JZ");
+		int k = fname.find("Akt4HIJets");
 		if (k==std::string::npos) {
 			cout << "Wrong name" << fname << endl;
 			break;	
 		}
-		wgsum[fname[k+2]-48] = wgsum[fname[k+2]-48]+1;
+bool found = false;
+		for (int j = 0; j < grid_size; j++){
+		if (stoi(fname.substr(k-7,7))==JZ_ID[j]) {
+			found = true;
+			wgsum[j] = wgsum[j] + 1;
+}
+		}
+if (!found) {
+cout << fname << endl;
+cout << "not found" << endl;
+break;
+}
+		
    	}	
 	cout << "number of slices:" << wgsum.size() << endl;
    	for (int i = 0; i < wgsum.size(); i++){
@@ -394,7 +473,7 @@ void bTagJF_grid()
    //TH1F* l3d_truth = new TH1F("l3d_truth","l3d_truth");
    for (Long64_t jentry = 0; jentry < nentries; jentry++)
    {
-      Long64_t ientry = LoadTree(jentry);
+      Long64_t ientry = myChain->LoadTree(jentry);
       if (ientry < 0)
          break;
 
@@ -413,11 +492,22 @@ void bTagJF_grid()
       b_jet_eta->GetEntry(ientry);
       b_jet_truthMatch->GetEntry(ientry);
       b_njets->GetEntry(ientry);
+      b_runnb->GetEntry(ientry);
       b_eventnb->GetEntry(ientry);
       b_Fcal->GetEntry(ientry);
       b_truth_PVx->GetEntry(ientry);
       b_truth_PVy->GetEntry(ientry);
       b_truth_PVz->GetEntry(ientry);
+
+      b_PVx->GetEntry(ientry);
+      b_PVy->GetEntry(ientry);
+      b_PVz->GetEntry(ientry);
+      b_jet_bH_pdgId->GetEntry(ientry);
+      b_jet_cH_pdgId->GetEntry(ientry);
+      b_bH_Lxy->GetEntry(ientry);
+      b_cH_Lxy->GetEntry(ientry);
+      b_jet_m->GetEntry(ientry);
+
       b_jet_truthEta->GetEntry(ientry);
       b_jet_truthPt->GetEntry(ientry);
       b_jet_dRminToB->GetEntry(ientry);
@@ -428,7 +518,7 @@ void bTagJF_grid()
       b_jet_bH_prod_z->GetEntry(ientry);
       b_jet_jf_m->GetEntry(ientry);
       b_jet_bH_x->GetEntry(ientry);
-      b_jet_bH_y,->GetEntry(ientry);
+      b_jet_bH_y->GetEntry(ientry);
       b_jet_bH_z->GetEntry(ientry);
       b_jet_jf_nvtx->GetEntry(ientry);
       b_jet_jf_vtx_L3D->GetEntry(ientry);
@@ -651,7 +741,7 @@ if (weight == 0) {
    gPad->SetGrid(1);
    gPad->SetTicks(1);
    cjf3->SetLogy();
-   cjf3->SaveAs(Form("JFV reco truth distance %s %s rapidity %.1f%s%s.pdf", Type[PbPb], dataType, eta_selection));
+   cjf3->SaveAs(Form("JFV reco truth distance %s %s rapidity %.1f.pdf", Type[PbPb], dataType, eta_selection));
 
    TCanvas *cjf4 = new TCanvas("cjf4", "cjf4", 1500, 500);
    cjf4->Divide(3, 1);
@@ -731,7 +821,7 @@ if (weight == 0) {
       //gPad->SetGrid(1);
       //gPad->SetTicks(1);
 
-      cjf4->SaveAs(Form("JFV reco and truth resolution %s%s %s rapidity %.1f%s%s_morehist.pdf", Type[PbPb], Centrality, dataType, eta_selection, uniqueness, jetTruthness));
+      cjf4->SaveAs(Form("JFV reco and truth resolution %s%s %s rapidity %.1f_morehist.pdf", Type[PbPb], Centrality, dataType, eta_selection));
    }
 
    //JF Efficiency vs pt
@@ -806,9 +896,8 @@ if (weight == 0) {
       cout << Form("Integrated Fraction for b Jet in %s%s: %.3f", Type[PbPb], Centrality, recoJFb[i] / allJFb[i]) << endl;
       cout << Form("Integrated Fraction for c Jet in %s%s: %.3f", Type[PbPb], Centrality, recoJFc[i] / allJFc[i]) << endl;
       cout << Form("Integrated Fraction for light Jet (fake) in %s%s: %.3f", Type[PbPb], Centrality, recoJFl[i] / allJFl[i]) << endl;
-      outfile << Form("%s %s", Type[PbPb], Centrality) << "," << recoJFb[i] / allJFb[i] << "," << recoJFc[i] / allJFc[i] << "," << recoJFl[i] / allJFl[i] << endl;
 
-      cjf0->SaveAs(Form("JFV reco efficiency %s%s %s rapidity %.1f%s%s_morehist.pdf", Type[PbPb], Centrality, dataType, eta_selection, uniqueness, jetTruthness));
+      cjf0->SaveAs(Form("JFV reco efficiency %s%s %s rapidity %.1f_morehist.pdf", Type[PbPb], Centrality, dataType, eta_selection));
    }
 
    cjf0->Close();
