@@ -25,13 +25,13 @@ const Float_t FCal_range[] = {0, 0.063719, 0.14414, 0.289595, 0.525092, 0.87541,
 
 const float Weight[] = {6.7890E+07, 6.789E+07, 6.3996E+05, 4.7195E+03, 2.6602E+01, 2.2476E-01};
 const float Filter[] = {9.9713E-01, 2.8748E-03, 4.2952E-03, 5.2994E-03, 4.5901E-03, 2.1846E-03};
-const int grid_size = sizeof(Weight)/sizeof(float);
+const int grid_size = sizeof(Weight) / sizeof(float);
 const int myColor[] = {kBlue, kViolet, kMagenta, kPink, kOrange, kYellow, kSpring, kTeal, kCyan, kAzure, kGray, kGray + 1, kGray + 3};
 const int cet[] = {0, 2, 2, 5, 5, 8}; //selected centrality sections
 const int cet_N = (sizeof(cet) / sizeof(int)) / 2;
-const bool PbPb =  true;
-char Type[2][10]={"pp","PbPb"};
-const char* dataType = "WorkingDefaultpp";
+const bool PbPb = true;
+char Type[2][10] = {"pp", "PbPb"};
+const char *dataType = "WorkingDefaultpp";
 Float_t Eta_range[] = {-2.1, -1.5, -0.9, -0.3, 0.3, 0.9, 1.5, 2.1};
 const int Eta_N = sizeof(Eta_range) / sizeof(float) - 1;
 
@@ -158,76 +158,84 @@ void bTagJF_grid()
       distbins[i] = TMath::Power(TMath::E(), initialdist);
       initialdist = initialdist + incredist;
    }
-std::string chain_name = "bTag_AntiKt4HIJets";
-	TChain *myChain = new TChain(chain_name.c_str());
+   std::string chain_name = "bTag_AntiKt4HIJets";
+   TChain *myChain = new TChain(chain_name.c_str());
 
-  std::ifstream file("/usatlas/u/cher97/GetStuff/test.txt");
-  std::string line;
-  while (std::getline(file, line))
-    {
+   std::ifstream file("/usatlas/u/cher97/GetStuff/test.txt");
+   std::string line;
+   while (std::getline(file, line))
+   {
       std::stringstream linestream(line);
       std::string item;
       int linePos = 0;
       std::string fileName;
       while (std::getline(linestream, item, '|'))
-        {
-	  
-	  //	  std::cout <<  item << " linePos " << linePos << endl;
-	  if (linePos == 5) {
-	    if (item.find("REPLICA") !=std::string::npos) continue;
-std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
-	  item.erase(end_pos, item.end());
-	  //cout << end_pos << endl;
-	cout << item << endl;
-	  int start_pos = item.find_last_of("=");
-	  cout << start_pos << endl;
-	    fileName = item.substr(start_pos + 1, item.length()-start_pos-1);
-cout << fileName << endl;
+      {
 
-	    if (fileName.find(".root") == std::string::npos) {
-       cout << fileName << "file missing" << endl; 
-	return;  
-}
-       if (fileName.find("user.xiaoning") == std::string::npos) { 
-       cout << fileName << "file missing" << endl; 
-break;
-}
-cout << fileName << endl;       
-myChain->Add(fileName.c_str());
+         //	  std::cout <<  item << " linePos " << linePos << endl;
+         if (linePos == 5)
+         {
+            if (item.find("REPLICA") != std::string::npos)
+               continue;
+            std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
+            item.erase(end_pos, item.end());
+            //cout << end_pos << endl;
+            cout << item << endl;
+            int start_pos = item.find_last_of("=");
+            cout << start_pos << endl;
+            fileName = item.substr(start_pos + 1, item.length() - start_pos - 1);
+            cout << fileName << endl;
 
-	  }
-	  ++linePos;
-        }
-    }    
+            if (fileName.find(".root") == std::string::npos)
+            {
+               cout << fileName << "file missing" << endl;
+               return;
+            }
+            if (fileName.find("user.xiaoning") == std::string::npos)
+            {
+               cout << fileName << "file missing" << endl;
+               break;
+            }
+            cout << fileName << endl;
+            myChain->Add(fileName.c_str());
+         }
+         ++linePos;
+      }
+   }
 
-  file.close(); 
+   file.close();
 
    int JZ_ID[grid_size];
 
-std::ifstream filej("/usatlas/u/cher97/GetStuff/test.txt");
-  std::string linej;
-  while (std::getline(filej, linej)){
+   std::ifstream filej("/usatlas/u/cher97/GetStuff/test.txt");
+   std::string linej;
+   while (std::getline(filej, linej))
+   {
       std::stringstream linestreamj(linej);
       std::string itemj;
       int linePosj = 0;
       std::string id;
-      while (std::getline(linestreamj, itemj, ' ')){
-      if (itemj == "") continue;
-if (itemj.find(dataType)==std::string::npos) continue;
-if (linePosj == 0) id = item;
-if (linePosj == 4){
-  int k = itemj.find("JZ");
-		if (k==std::string::npos) {
-			cout << "Wrong name" << itemj << endl;
-			break;	
-		}
-JZ_ID[itemj[k+2]-48] = std::stoi(ID);
-}
-}
-++linePosj;
-}
-
-
+      while (std::getline(linestreamj, itemj, ' '))
+      {
+         if (itemj == "")
+            continue;
+         if (itemj.find(dataType) == std::string::npos)
+            continue;
+         if (linePosj == 0)
+            id = item;
+         if (linePosj == 4)
+         {
+            int k = itemj.find("JZ");
+            if (k == std::string::npos)
+            {
+               cout << "Wrong name" << itemj << endl;
+               break;
+            }
+            JZ_ID[itemj[k + 2] - 48] = std::stoi(ID);
+         }
+      }
+      ++linePosj;
+   }
 
    std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
@@ -428,45 +436,53 @@ JZ_ID[itemj[k+2]-48] = std::stoi(ID);
 
    std::vector<float> wgsum;
 
-	for (int jz = 0; jz < grid_size; jz++){
-		wgsum.push_back(0);
-	}
-	//std::vector<int> order;
-   	for (Long64_t jentry0 = 0; jentry0 < nentries; jentry0++){
-    		Long64_t ientry0 = myChain->LoadTree(jentry0);
-    		//b_mcwg->GetEntry(ientry0);
-    		if (ientry0 < 0) {
-      			cout << "invalid index" << endl;
-      		break;
-    		}
-		
-		if (jentry0 == 100000) break;
+   for (int jz = 0; jz < grid_size; jz++)
+   {
+      wgsum.push_back(0);
+   }
+   //std::vector<int> order;
+   for (Long64_t jentry0 = 0; jentry0 < nentries; jentry0++)
+   {
+      Long64_t ientry0 = myChain->LoadTree(jentry0);
+      //b_mcwg->GetEntry(ientry0);
+      if (ientry0 < 0)
+      {
+         cout << "invalid index" << endl;
+         break;
+      }
 
-		fname = myChain->GetCurrentFile()->GetName();
-		//cout << fname << endl;
-		int k = fname.find("Akt4HIJets");
-		if (k==std::string::npos) {
-			cout << "Wrong name" << fname << endl;
-			break;	
-		}
-bool found = false;
-		for (int j = 0; j < grid_size; j++){
-		if (stoi(fname.substr(k-7,7))==JZ_ID[j]) {
-			found = true;
-			wgsum[j] = wgsum[j] + 1;
-}
-		}
-if (!found) {
-cout << fname << endl;
-cout << "not found" << endl;
-break;
-}
-		
-   	}	
-	cout << "number of slices:" << wgsum.size() << endl;
-   	for (int i = 0; i < wgsum.size(); i++){
-    		cout << "JZ Slice " << i << ": " << wgsum[i] << endl;
-   	}	
+      if (jentry0 == 100000)
+         break;
+
+      fname = myChain->GetCurrentFile()->GetName();
+      //cout << fname << endl;
+      int k = fname.find("Akt4HIJets");
+      if (k == std::string::npos)
+      {
+         cout << "Wrong name" << fname << endl;
+         break;
+      }
+      bool found = false;
+      for (int j = 0; j < grid_size; j++)
+      {
+         if (stoi(fname.substr(k - 7, 7)) == JZ_ID[j])
+         {
+            found = true;
+            wgsum[j] = wgsum[j] + 1;
+         }
+      }
+      if (!found)
+      {
+         cout << fname << endl;
+         cout << "not found" << endl;
+         break;
+      }
+   }
+   cout << "number of slices:" << wgsum.size() << endl;
+   for (int i = 0; i < wgsum.size(); i++)
+   {
+      cout << "JZ Slice " << i << ": " << wgsum[i] << endl;
+   }
 
    //loop over for weight
    //float min_dist3d = 10;
@@ -478,12 +494,12 @@ break;
          break;
 
       if (ientry < 0)
-			break;
-		if (jentry % 10000 == 0)
-			std::cout << jentry << std::endl;
+         break;
+      if (jentry % 10000 == 0)
+         std::cout << jentry << std::endl;
 
-
-      if (jentry == 10000) break;
+      if (jentry == 10000)
+         break;
       //float FCal_et = Fcal;
       //loop over each jet to categorize them into different jet type
       //rule, if there's no truth jet matched, pass the jet
@@ -528,25 +544,40 @@ break;
       b_jet_jf_vtx_z->GetEntry(ientry);
       b_jet_btag_ntrk->GetEntry(ientry);
       b_jet_trk_orig->GetEntry(ientry);
-      	//
-		
-		int pos;
-		
-		fname = myChain->GetCurrentFile()->GetName();
+      //
 
+      int pos;
 
-		if (fname.find("JZ")==std::string::npos) {
-			cout << "file name doens't contain JZ info" << endl;
-			cout << fname << endl;
-			break;
-		}
-		pos = fname.find("JZ");
-		weight = Weight[fname[pos+2]-48]*Filter[fname[pos+2]-48]/wgsum[fname[pos+2]-48];
+      fname = myChain->GetCurrentFile()->GetName();
 
-if (weight == 0) {
-			cout << "wrong weight" << endl;
-			break;
-		}
+      int k = fname.find("Akt4HIJets");
+      if (k == std::string::npos)
+      {
+         cout << "Wrong name" << fname << endl;
+         break;
+      }
+      bool found = false;
+      for (int j = 0; j < grid_size; j++)
+      {
+         if (stoi(fname.substr(k - 7, 7)) == JZ_ID[j])
+         {
+            found = true;
+            weight = Weight[j] * Filter[j] / wgsum[j];
+         }
+      }
+      if (!found)
+      {
+         cout << fname << endl;
+         cout << "not found" << endl;
+         break;
+      }
+      
+
+      if (weight == 0)
+      {
+         cout << "wrong weight" << endl;
+         break;
+      }
 
       float FCal_et = Fcal;
       //cout << "FCal_et: " << FCal_et << endl;
