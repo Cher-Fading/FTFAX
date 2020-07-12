@@ -327,7 +327,7 @@ here:
       if (i == JZ)
          wgsum = stof(line.substr(3, line.length() - 3));
    }
-   if (wgsum < 0)
+   if (wgsum <= 0)
    {
       cout << "wgsum issue" << endl;
       return;
