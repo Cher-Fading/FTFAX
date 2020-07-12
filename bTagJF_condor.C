@@ -27,9 +27,9 @@ const int grid_size = sizeof(Weight) / sizeof(float);
 const int myColor[] = {kBlue, kViolet, kMagenta, kPink, kOrange, kYellow, kSpring, kTeal, kCyan, kAzure, kGray, kGray + 1, kGray + 3};
 const int cet[] = {0, 2, 2, 5, 5, 8}; //selected centrality sections
 const int cet_N = (sizeof(cet) / sizeof(int)) / 2;
-const bool PbPb = true;
+//const bool PbPb = true;
 char Type[2][10] = {"pp", "PbPb"};
-const char *dataType = "WorkingDefaultpp";
+//const char *dataType = "WorkingDefaultpp";
 Float_t Eta_range[] = {-2.1, -1.5, -0.9, -0.3, 0.3, 0.9, 1.5, 2.1};
 const int Eta_N = sizeof(Eta_range) / sizeof(float) - 1;
 
@@ -125,7 +125,7 @@ void initBranches(TChain *myChain)
    myChain->SetBranchStatus("jet_jf_llr", 1);
 }
 
-void bTagJF_grid()
+void bTagJF_condor(const char *filename = "", const char *dataType = "", const bool PbPb = true)
 {
    Float_t ptbins[pt_bin + 1];
    float initial = log(pt_min);
@@ -147,51 +147,10 @@ void bTagJF_grid()
    std::string chain_name = "bTag_AntiKt4HIJets";
    TChain *myChain = new TChain(chain_name.c_str());
 
-   std::ifstream file(Form("/usatlas/u/cher97/GetStuff/%s.txt", dataType));
-   std::string line;
-   while (std::getline(file, line))
-   {
-      std::stringstream linestream(line);
-      std::string item;
-      int linePos = 0;
-      std::string fileName;
-      while (std::getline(linestream, item, '|'))
-      {
-
-         //	  std::cout <<  item << " linePos " << linePos << endl;
-         if (linePos == 5)
-         {
-            if (item.find("REPLICA") != std::string::npos)
-               continue;
-            std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
-            item.erase(end_pos, item.end());
-            //cout << end_pos << endl;
-            //cout << item << endl;
-            int start_pos = item.find_last_of("=");
-            //cout << start_pos << endl;
-            fileName = item.substr(start_pos + 1, item.length() - start_pos - 1);
-            //cout << fileName << endl;
-
-            if (fileName.find(".root") == std::string::npos)
-            {
-               cout << fileName << "file missing" << endl;
-               return;
-            }
-            if (fileName.find("user.xiaoning") == std::string::npos)
-            {
-               cout << fileName << "file missing" << endl;
-               break;
-            }
-            //cout << fileName << endl;
-            myChain->Add(fileName.c_str());
-         }
-         ++linePos;
-      }
-   }
-
-   file.close();
+   myChain->Add(filename);
 
    int JZ_ID[grid_size];
+   int JZ = -1;
 
    std::ifstream filej("/usatlas/u/cher97/GetStuff/JZ_ID.txt");
    std::string linej;
@@ -333,7 +292,51 @@ here:
    std::string fname;
    float weight;
 
-   TFile *out = TFile::Open(Form("%s%srapidityJF%.1f%d.root", Type[PbPb], dataType, eta_selection, pt_min), "RECREATE");
+   float wgsum;
+   //std::vector<int> order;
+
+   int k = fileName.find("Akt4HIJets");
+   if (k == std::string::npos)
+   {
+      cout << "Wrong name" << fname << endl;
+      break;
+   }
+   bool found = false;
+   //cout << stoi(fname.substr(k - 9, 8)) << endl;
+   for (int j = 0; j < grid_size; j++)
+   {
+      if (stoi(fileName.substr(k - 9, 8)) == JZ_ID[j])
+      {
+         found = true;
+         JZ = j;
+      }
+   }
+   if (!found)
+   {
+      cout << fname << endl;
+      cout << "not found" << endl;
+      return;
+   }
+
+   std::ifstream inJZ(Form("../GetStuff/%s_evtnb.txt", dataType));
+   std::string line;
+
+   while (getline(inJZ, line))
+   {
+      int i = stoi(line.substr(0, 1));
+      if (i == JZ)
+         wgsum = stof(line.substr(3, line.length() - 3));
+   }
+   if (wgsum < 0)
+   {
+      cout << "wgsum issue" << endl;
+      return;
+   }
+
+   inJZ.close();
+   int NUM = stoi(filename.substr(filename.length()-11,6));
+
+   TFile *out = TFile::Open(Form("%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
 
    Long64_t nbytes = 0, nb = 0;
 
@@ -355,121 +358,36 @@ here:
    TH1F *reco_jf_l[cent_N];
    TH1F *all_jf_l[cent_N];
 
-   //JF intergated efficiency:
-   Float_t recoJFb[cent_N];
-   Float_t allJFb[cent_N];
-   Float_t recoJFc[cent_N];
-   Float_t allJFc[cent_N];
-   Float_t recoJFl[cent_N];
-   Float_t allJFl[cent_N];
-
-   Float_t secJFt[cent_N];
-   Float_t recoJFt[cent_N];
-   Float_t truthJFt[cent_N];
-
-   Float_t recoJFt_cate[cent_N][5];
-   Float_t secJFt_cate[cent_N][5];
-
-   //JF track purity
-   TH1F *reco_trk_b[cent_N];
-   TH1F *reco_trk_d[cent_N];
-   TH1F *reco_trk_f[cent_N];
-   /*TH1F* truth_trk_b[cent_N];
-   TH1F* truth_trk_d[cent_N];
-   TH1F* truth_trk_f[cent_N];*/
-   TH1F *reco_b_truth_b[cent_N];
-   TH1F *reco_b_truth_d[cent_N];
-   TH1F *reco_b_truth_f[cent_N];
-   TH1F *reco_d_truth_b[cent_N];
-   TH1F *reco_d_truth_d[cent_N];
-   TH1F *reco_d_truth_f[cent_N];
 
    for (int i = 0; i < cent_N; i++)
    {
 
-      SV_resolution_b[i] = hotTH1F(Form("SV_resolution_b_cent_%d", i), "Distance between Truth and JF Reco Secondary Vertices", dist_bin2, 0, 80, "", "", myColor[i * 2], 0.3, 21, 1, true);
-      JFV_x[i] = hotTH1F(Form("JFV_x_cent_%d", i), "JF Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kReco, 0.3, 21, 1, true);
-      JFV_y[i] = hotTH1F(Form("JFV_y_cent_%d", i), "JF Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kReco, 0.3, 21, 1, true);
-      JFV_z[i] = hotTH1F(Form("JFV_z_cent_%d", i), "JF Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kReco, 0.3, 21, 1, true);
+      SV_resolution_b[i] = hotTH1F(Form("SV_resolution_b_cent_%d_JZ_%d_%d", i, JZ, NUM), "Distance between Truth and JF Reco Secondary Vertices", dist_bin2, 0, 80, "", "", myColor[i * 2], 0.3, 21, 1, true);
+      JFV_x[i] = hotTH1F(Form("JFV_x_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kReco, 0.3, 21, 1, true);
+      JFV_y[i] = hotTH1F(Form("JFV_y_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kReco, 0.3, 21, 1, true);
+      JFV_z[i] = hotTH1F(Form("JFV_z_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kReco, 0.3, 21, 1, true);
 
-      JFV_truth_x[i] = hotTH1F(Form("JFV_truth_x_cent_%d", i), "JF Truth Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kTruth, 0.3, 21, 1, true);
-      JFV_truth_y[i] = hotTH1F(Form("JFV_truth_y_cent_%d", i), "JF Truth Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kTruth, 0.3, 21, 1, true);
-      JFV_truth_z[i] = hotTH1F(Form("JFV_truth_z_cent_%d", i), "JF Truth Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kTruth, 0.3, 21, 1, true);
+      JFV_truth_x[i] = hotTH1F(Form("JFV_truth_x_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Truth Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kTruth, 0.3, 21, 1, true);
+      JFV_truth_y[i] = hotTH1F(Form("JFV_truth_y_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Truth Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kTruth, 0.3, 21, 1, true);
+      JFV_truth_z[i] = hotTH1F(Form("JFV_truth_z_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Truth Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kTruth, 0.3, 21, 1, true);
 
       //dL3d_b[i][j] = hotTH1F(Form("dL3d_b_cent_%d_pT_%d",i,j), "Distribution of L3d difference between Truth and Reco in b-jet", dist_bin, min_dist, max_dist,"","",myColor[j],0.3,21,1,true);
 
       //JetFitter secondary vertices
-      reco_jf_b[i] = hotTH1F(Form("reco_jf_b_cent_%d", i), "Number of jets with JFV reconstructed for b jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
-      all_jf_b[i] = hotTH1F(Form("all_jf_b_cent_%d", i), "Number of b jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      reco_jf_b[i] = hotTH1F(Form("reco_jf_b_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of jets with JFV reconstructed for b jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      all_jf_b[i] = hotTH1F(Form("all_jf_b_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of b jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
 
-      reco_jf_c[i] = hotTH1F(Form("reco_jf_c_cent_%d", i), "Number of jets with JFV reconstructed for c jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
-      all_jf_c[i] = hotTH1F(Form("all_jf_c_cent_%d", i), "Number of c jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      reco_jf_c[i] = hotTH1F(Form("reco_jf_c_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of jets with JFV reconstructed for c jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      all_jf_c[i] = hotTH1F(Form("all_jf_c_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of c jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
 
-      reco_jf_l[i] = hotTH1F(Form("reco_jf_l_cent_%d", i), "Number of jets with JFV reconstructed for light jet (fake SV) with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
-      all_jf_l[i] = hotTH1F(Form("all_jf_l_cent_%d", i), "Number of light jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      reco_jf_l[i] = hotTH1F(Form("reco_jf_l_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of jets with JFV reconstructed for light jet (fake SV) with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      all_jf_l[i] = hotTH1F(Form("all_jf_l_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of light jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
    }
 
    int multiB = 0;
    int nJets = 0;
    int NJets = 0;
 
-   std::vector<float> wgsum;
-
-   for (int jz = 0; jz < grid_size; jz++)
-   {
-      wgsum.push_back(0);
-   }
-   //std::vector<int> order;
-   for (Long64_t jentry0 = 0; jentry0 < nentries; jentry0++)
-   {
-      Long64_t ientry0 = myChain->LoadTree(jentry0);
-      //b_mcwg->GetEntry(ientry0);
-      if (ientry0 < 0)
-      {
-         cout << "invalid index" << endl;
-         break;
-      }
-
-      //if (jentry0 == 100000)
-      //   break;
-
-      fname = myChain->GetCurrentFile()->GetName();
-      //cout << fname << endl;
-      int k = fname.find("Akt4HIJets");
-      if (k == std::string::npos)
-      {
-         cout << "Wrong name" << fname << endl;
-         break;
-      }
-      bool found = false;
-      //cout << stoi(fname.substr(k - 9, 8)) << endl;
-      for (int j = 0; j < grid_size; j++)
-      {
-         if (stoi(fname.substr(k - 9, 8)) == JZ_ID[j])
-         {
-            found = true;
-            wgsum[j] = wgsum[j] + 1;
-         }
-      }
-      if (!found)
-      {
-         cout << fname << endl;
-         cout << "not found" << endl;
-         return;
-      }
-   }
-   cout << "number of slices:" << wgsum.size() << endl;
-   std::ofstream outfile;
-   outfile.open(Form("%s_JZ_count.txt",dataType), std::ios_base::trunc);
-   for (int i = 0; i < wgsum.size(); i++)
-   {
-      cout << "JZ Slice " << i << ": " <<  std::setprecision(9) << wgsum[i] << endl;
-      outfile << i << ": " << std::setprecision(9) << wgsum[i] << endl;
-   }
-   outfile.close();
-return;
-   //loop over for weight
-   //float min_dist3d = 10;
    //TH1F* l3d_truth = new TH1F("l3d_truth","l3d_truth");
    for (Long64_t jentry = 0; jentry < nentries; jentry++)
    {
@@ -526,33 +444,9 @@ return;
       b_jet_jf_llr->GetEntry(ientry);
       //
       //cout << "line 564" << endl;
-      int pos;
 
-      if (ientry == 0){
-      fname = myChain->GetCurrentFile()->GetName();
+      weight = Weight[JZ] * Filter[JZ] / wgsum;
 
-      int k = fname.find("Akt4HIJets");
-      if (k == std::string::npos)
-      {
-         cout << "Wrong name" << fname << endl;
-         break;
-      }
-      bool found = false;
-      for (int j = 0; j < grid_size; j++)
-      {
-         if (stoi(fname.substr(k - 9, 8)) == JZ_ID[j])
-         {
-            found = true;
-            weight = Weight[j] * Filter[j] / wgsum[j];
-         }
-      }
-      if (!found)
-      {
-         cout << fname << endl;
-         cout << "not found" << endl;
-         break;
-      }
-      }
       if (weight == 0)
       {
          cout << "wrong weight" << endl;
@@ -748,192 +642,28 @@ return;
       }
    }
 
-   //JFV resolution
-
-   TCanvas *cjf3 = new TCanvas("cjf3", "cjf3", 500, 500);
-   TPad *p0 = (TPad *)cjf3->cd();
-   TH1F *h0 = (TH1F *)p0->DrawFrame(0, 1e-4, 80, 1);
-   h0->GetXaxis()->SetTitle("Distance (Truth-Reco) (mm)");
-   h0->GetXaxis()->SetTitle(Form("Normalized Fraction/%.2f mm", 40. / dist_bin2));
-   h0->SetTitle("Distance between Truth and JF Reco Secondary Vertices");
-
    for (int i = 0; i < cent_N; i++)
    {
-      const char *Centrality = PbPb ? Form(" %d %% %d %%", 10 * cet[2 * i], 10 * cet[2 * i + 1]) : "";
-      SV_resolution_b[i]->Scale(1. / SV_resolution_b[i]->GetSumOfWeights());
-      SV_resolution_b[i]->Draw("SAME");
       SV_resolution_b[i]->Write();
-      myBoxText(0.4, 0.85 - i * 0.05, 0.05, myColor[2 * i], 0, Form("%s%s", Type[PbPb], Centrality), 1, myColor[2 * i], 21, true);
-   }
-   gPad->SetGrid(1);
-   gPad->SetTicks(1);
-   cjf3->SetLogy();
-   cjf3->SaveAs(Form("JFV reco truth distance %s %s rapidity %.1f.pdf", Type[PbPb], dataType, eta_selection));
-
-   TCanvas *cjf4 = new TCanvas("cjf4", "cjf4", 1500, 500);
-   cjf4->Divide(3, 1);
-   TPad *px;
-   TPad *py;
-   TPad *pz;
-
-   //cout << min_distxs << " " << max_distxs << endl;
-   //cout << min_distys << " " << max_distys << endl;
-   //cout << min_distzs << " " << max_distzs << endl;
-
-   TH1F *hx;
-   TH1F *hy;
-   TH1F *hz;
-
-   for (int i = 0; i < cent_N; i++)
-   {
-      //gPad->SetGrid(1);
-      //gPad->SetTicks(1);
-      const char *Centrality = PbPb ? Form(" %d %% %d %%", 10 * cet[2 * i], 10 * cet[2 * i + 1]) : "";
-
-      px = (TPad *)cjf4->cd(1);
-      hx = (TH1F *)px->DrawFrame(min_distxs, 1e-4, max_distxs, 0.7);
-      hx->GetXaxis()->SetTitle("SV x coord (mm)");
-      hx->GetYaxis()->SetTitle(Form("Nornalized Fraction/%.2f mm", (max_distxs - min_distxs) / dist_bin2));
-      hx->SetTitle("x Coordinate of JF Secondary Vertex");
-
-      cjf4->cd(1);
-      hx->Draw();
-      JFV_x[i]->Scale(1. / JFV_x[i]->GetSumOfWeights());
-      JFV_x[i]->Draw("SAME");
       JFV_x[i]->Write();
-      myBoxText(0.4, 0.85, 0.05, kReco, 0, Form("JF SV: %s%s", Type[PbPb], Centrality), 1, kReco, 21, true);
-      JFV_truth_x[i]->Scale(1. / JFV_truth_x[i]->GetSumOfWeights());
-      JFV_truth_x[i]->Draw("SAME");
-      JFV_truth_x[i]->Write();
-      myBoxText(0.4, 0.80, 0.05, kTruth, 0, Form("Truth SV: %s%s", Type[PbPb], Centrality), 1, kTruth, 21, true);
-
-      py = (TPad *)cjf4->cd(2);
-      hy = (TH1F *)py->DrawFrame(min_distys, 1e-4, max_distys, 0.3);
-      hy->GetXaxis()->SetTitle("SV y coord (mm)");
-      hy->GetYaxis()->SetTitle(Form("Nornalized Fraction/%.2f mm", (max_distxs - min_distxs) / dist_bin2));
-      hy->SetTitle("y Coordinate of JF Secondary Vertex");
-
-      cjf4->cd(2);
-      hy->Draw();
-      JFV_y[i]->Scale(1. / JFV_y[i]->GetSumOfWeights());
-      JFV_y[i]->Draw("SAME");
       JFV_y[i]->Write();
-      myBoxText(0.4, 0.85, 0.05, kReco, 0, Form("JF SV: %s%s", Type[PbPb], Centrality), 1, kReco, 21, true);
-      JFV_truth_y[i]->Scale(1. / JFV_truth_y[i]->GetSumOfWeights());
-      JFV_truth_y[i]->Draw("SAME");
-      JFV_truth_y[i]->Write();
-      myBoxText(0.4, 0.80, 0.05, kTruth, 0, Form("Truth SV: %s%s", Type[PbPb], Centrality), 1, kTruth, 21, true);
-
-      pz = (TPad *)cjf4->cd(3);
-      hz = (TH1F *)pz->DrawFrame(min_distzs, 1e-4, max_distzs, 0.3);
-      hz->GetXaxis()->SetTitle("SV z coord (mm)");
-      hz->GetYaxis()->SetTitle(Form("Nornalized Fraction/%.2f mm", (max_distxs - min_distxs) / dist_bin2));
-      hz->SetTitle("z Coordinate of JF Secondary Vertex");
-
-      cjf4->cd(3);
-      hz->Draw();
-      JFV_z[i]->Scale(1. / JFV_z[i]->GetSumOfWeights());
-      JFV_z[i]->Draw("SAME");
       JFV_z[i]->Write();
-      myBoxText(0.4, 0.85, 0.05, kReco, 0, Form("JF SV: %s%s", Type[PbPb], Centrality), 1, kReco, 21, true);
-      JFV_truth_z[i]->Scale(1. / JFV_truth_z[i]->GetSumOfWeights());
-      JFV_truth_z[i]->Draw("SAME");
+
+      JFV_truth_x[i]->Write();
+      JFV_truth_y[i]->Write();
       JFV_truth_z[i]->Write();
-      myBoxText(0.4, 0.80, 0.05, kTruth, 0, Form("Truth SV: %s%s", Type[PbPb], Centrality), 1, kTruth, 21, true);
 
-      /*px->SetLogy();
-      py->SetLogy();
-      pz->SetLogy();*/
-
-      //gPad->SetGrid(1);
-      //gPad->SetTicks(1);
-
-      cjf4->SaveAs(Form("JFV reco and truth resolution %s%s %s rapidity %.1f_morehist.pdf", Type[PbPb], Centrality, dataType, eta_selection));
-   }
-
-   //JF Efficiency vs pt
-   TCanvas *cjf0 = new TCanvas("cjf0", "cjf0", 500, 500);
-   TGraphAsymmErrors *eff_jf_b[cent_N];
-   TGraphAsymmErrors *eff_jf_c[cent_N];
-   TGraphAsymmErrors *eff_jf_l[cent_N];
-   TMultiGraph *hjf0[cent_N];
-   gPad->SetTicks(1);
-
-   for (int i = 0; i < cent_N; i++)
-   {
-      eff_jf_b[i] = new TGraphAsymmErrors(reco_jf_b[i], all_jf_b[i], "cl=0.683 b(1,1) mode");
-      eff_jf_b[i]->SetMarkerSize(1);
-      eff_jf_b[i]->SetMarkerColor(kBlue);
-      eff_jf_b[i]->SetMarkerStyle(21);
-      eff_jf_b[i]->SetLineColor(kBlue);
-      eff_jf_b[i]->SetLineWidth(1);
-      eff_jf_c[i] = new TGraphAsymmErrors(reco_jf_c[i], all_jf_c[i], "cl=0.683 b(1,1) mode");
-      eff_jf_c[i]->SetMarkerSize(1);
-      eff_jf_c[i]->SetMarkerColor(kRed);
-      eff_jf_c[i]->SetMarkerStyle(21);
-      eff_jf_c[i]->SetLineColor(kRed);
-      eff_jf_c[i]->SetLineWidth(1);
-      eff_jf_c[i]->SetLineStyle(10);
-      eff_jf_l[i] = new TGraphAsymmErrors(reco_jf_l[i], all_jf_l[i], "cl=0.683 b(1,1) mode");
-      eff_jf_l[i]->SetMarkerSize(1);
-      eff_jf_l[i]->SetMarkerColor(418);
-      eff_jf_l[i]->SetMarkerStyle(21);
-      eff_jf_l[i]->SetLineColor(418);
-      eff_jf_l[i]->SetLineWidth(1);
-      eff_jf_l[i]->SetLineStyle(9);
-      hjf0[i] = new TMultiGraph();
-      //cout << a << endl;
-
-      hjf0[i]->Add(eff_jf_b[i]);
-      hjf0[i]->Add(eff_jf_c[i]);
-      hjf0[i]->Add(eff_jf_l[i]);
-      hjf0[i]->Draw("APE");
-
-      hjf0[i]->GetXaxis()->SetLimits(pt_min, pt_max);
-      hjf0[i]->GetYaxis()->SetLimits(0, 1.4);
-      hjf0[i]->GetXaxis()->SetRangeUser(pt_min, pt_max);
-      hjf0[i]->GetYaxis()->SetRangeUser(0, 1.4);
-      hjf0[i]->GetXaxis()->SetTitle(Form("p_{T}^{%s} (GeV)", TorR));
-      hjf0[i]->GetYaxis()->SetTitle("JFV Reco Efficiency");
-      hjf0[i]->SetTitle(Form("JFV Reconstruction Efficiency in %s MC", Type[PbPb]));
+      //JetFitter secondary vertices
       reco_jf_b[i]->Write();
       all_jf_b[i]->Write();
-      eff_jf_b[i]->Write();
 
       reco_jf_c[i]->Write();
       all_jf_c[i]->Write();
-      eff_jf_c[i]->Write();
 
       reco_jf_l[i]->Write();
       all_jf_l[i]->Write();
-      eff_jf_l[i]->Write();
-
-      myBoxText(0.4, 0.85, 0.05, kBlue, 0, "b-jet", 1, kBlue, 21, true);
-      myBoxText(0.4, 0.8, 0.05, kRed, 0, "c-jet", 10, kRed, 21, true);
-      myBoxText(0.4, 0.75, 0.05, 418, 0, "light jet", 9, 418, 21, true);
-
-      const char *Centrality = PbPb ? Form(" %d %% %d %%", 10 * cet[2 * i], 10 * cet[2 * i + 1]) : "";
-
-      //c0->SetLogy();
-      myText(0.6, 0.85, kBlack, "|#eta|<2.1");
-      myText(0.6, 0.8, kBlack, "#sqrt{s} = 5 TeV");
-      myText(0.6, 0.75, kBlack, Form("%s b#bar{b} filtered MC%s", Type[PbPb], Centrality));
-
-      //cout << Form("Integrated Purity for %s%s: %.2f",Type[PbPb],Centrality,reco_jf_b->GetSumOfWeights()/all_jf_b->GetSumOfWeights()) << endl;
-      cout << Form("Integrated Fraction for b Jet in %s%s: %.3f", Type[PbPb], Centrality, recoJFb[i] / allJFb[i]) << endl;
-      cout << Form("Integrated Fraction for c Jet in %s%s: %.3f", Type[PbPb], Centrality, recoJFc[i] / allJFc[i]) << endl;
-      cout << Form("Integrated Fraction for light Jet (fake) in %s%s: %.3f", Type[PbPb], Centrality, recoJFl[i] / allJFl[i]) << endl;
-
-      cjf0->SaveAs(Form("JFV reco efficiency %s%s %s rapidity %.1f_morehist.pdf", Type[PbPb], Centrality, dataType, eta_selection));
    }
 
-   cjf0->Close();
-   cjf3->Close();
-   cjf4->Close();
-
    out->Close();
-   cout << "Number of Jets Used: " << nJets << endl;
-   cout << "Number of Jets not used for having multiple B: " << multiB << endl;
-   cout << "Total number of Jets looped over: " << NJets << endl;
    //cout << "Minimum distance between truth and reco SV: " << min_dist3d << endl;
 }
