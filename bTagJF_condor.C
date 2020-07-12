@@ -338,7 +338,7 @@ here:
    }
 
    inJZ.close();
-   cout << filename.substr(filename.length()-11,6)) << endl;
+   cout << filename.substr(filename.length()-11,6) << endl;
    int NUM = std::stoi(filename.substr(filename.length()-11,6));
    cout << "ID: " << NUM << endl;
 
