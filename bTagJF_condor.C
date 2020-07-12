@@ -302,10 +302,10 @@ here:
       return;
    }
    bool found = false;
-   //cout << stoi(fname.substr(k - 9, 8)) << endl;
+   
    for (int j = 0; j < grid_size; j++)
    {
-      if (stoi(filename.substr(k - 9, 8)) == JZ_ID[j])
+      if (std::stoi(filename.substr(k - 9, 8)) == JZ_ID[j])
       {
          found = true;
          JZ = j;
@@ -318,15 +318,18 @@ here:
       return;
    }
 
+   cout << "JZ: " << JZ << endl;
+
    std::ifstream inJZ(Form("../GetStuff/%s_evtnb.txt", dataType));
    std::string line;
 
    while (getline(inJZ, line))
    {
       int i = std::stoi(line.substr(0, 1));
-      if (i == JZ)
+      if (i == JZ){
          wgsum = std::stof(line.substr(3, line.length() - 3));
          cout << "wgsum: " << wgsum << endl;
+      }
    }
    if (wgsum <= 0)
    {
