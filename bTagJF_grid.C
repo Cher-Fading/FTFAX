@@ -122,6 +122,7 @@ void initBranches(TChain *myChain)
    myChain->SetBranchStatus("closestVtx_L3D", 1);
    myChain->SetBranchStatus("jet_btag_ntrk", 1);
    myChain->SetBranchStatus("jet_trk_orig", 1);
+   myChain->SetBranchStatus("jet_jf_llr", 1);
 }
 
 void bTagJF_grid()
@@ -146,7 +147,7 @@ void bTagJF_grid()
    std::string chain_name = "bTag_AntiKt4HIJets";
    TChain *myChain = new TChain(chain_name.c_str());
 
-   std::ifstream file("/usatlas/u/cher97/GetStuff/test.txt");
+   std::ifstream file(Form("/usatlas/u/cher97/GetStuff/%s.txt", dataType));
    std::string line;
    while (std::getline(file, line))
    {
@@ -273,9 +274,10 @@ here:
    std::vector<std::vector<float>> *jet_jf_vtx_y = 0;
    std::vector<std::vector<float>> *jet_jf_vtx_z = 0;
    std::vector<int> *jet_btag_ntrk = 0;
-   vector<vector<int>> *jet_trk_orig = 0;
+   std::vector<std::vector<int>> *jet_trk_orig = 0;
+   std::vector<float> *jet_jf_llr = 0;
 
-   TBranch *b_jet_pt, *b_jet_eta, *b_runnb, *b_PVx, *b_PVy, *b_PVz, *b_jet_bH_pdgId, *b_jet_cH_pdgId, *b_jet_bH_Lxy, *b_jet_cH_Lxy, *b_jet_m, *b_jet_truthMatch, *b_njets, *b_eventnb, *b_Fcal, *b_truth_PVx, *b_truth_PVy, *b_truth_PVz, *b_jet_truthEta, *b_jet_truthPt, *b_jet_dRminToB, *b_jet_dRminToC, *b_jet_dRminToT, *b_jet_bH_prod_x, *b_jet_bH_prod_y, *b_jet_bH_prod_z, *b_jet_jf_m, *b_jet_bH_x, *b_jet_bH_y, *b_jet_bH_z, *b_jet_jf_nvtx, *b_jet_jf_vtx_L3D, *b_closestVtx_L3D, *b_jet_jf_vtx_x, *b_jet_jf_vtx_y, *b_jet_jf_vtx_z, *b_jet_btag_ntrk, *b_jet_trk_orig;
+   TBranch *b_jet_pt, *b_jet_eta, *b_runnb, *b_PVx, *b_PVy, *b_PVz, *b_jet_bH_pdgId, *b_jet_cH_pdgId, *b_jet_bH_Lxy, *b_jet_cH_Lxy, *b_jet_m, *b_jet_truthMatch, *b_njets, *b_eventnb, *b_Fcal, *b_truth_PVx, *b_truth_PVy, *b_truth_PVz, *b_jet_truthEta, *b_jet_truthPt, *b_jet_dRminToB, *b_jet_dRminToC, *b_jet_dRminToT, *b_jet_bH_prod_x, *b_jet_bH_prod_y, *b_jet_bH_prod_z, *b_jet_jf_m, *b_jet_bH_x, *b_jet_bH_y, *b_jet_bH_z, *b_jet_jf_nvtx, *b_jet_jf_vtx_L3D, *b_closestVtx_L3D, *b_jet_jf_vtx_x, *b_jet_jf_vtx_y, *b_jet_jf_vtx_z, *b_jet_btag_ntrk, *b_jet_trk_orig, *b_jet_jf_llr;
 
    /*TBranch* b_mcwg;
 	Float_t mcwg = 0;
@@ -298,6 +300,7 @@ here:
    myChain->SetBranchAddress("jet_jf_nvtx", &jet_jf_nvtx, &b_jet_jf_nvtx);
    myChain->SetBranchAddress("jet_jf_vtx_L3D", &jet_jf_vtx_L3D, &b_jet_jf_vtx_L3D);
    myChain->SetBranchAddress("runnb", &runnb, &b_runnb);
+   myChain->SetBranchAddress("jet_jf_llr", &jet_jf_llr, &b_jet_jf_llr);
    myChain->SetBranchAddress("PVx", &PVx, &b_PVx);
    myChain->SetBranchAddress("PVy", &PVy, &b_PVy);
    myChain->SetBranchAddress("PVz", &PVz, &b_PVz);
@@ -427,8 +430,8 @@ here:
          break;
       }
 
-      if (jentry0 == 100000)
-         break;
+      //if (jentry0 == 100000)
+      //   break;
 
       fname = myChain->GetCurrentFile()->GetName();
       //cout << fname << endl;
@@ -456,11 +459,14 @@ here:
       }
    }
    cout << "number of slices:" << wgsum.size() << endl;
+   std::ofstream outfile;
+   outfile.open(Form("%s.txt",dataType), std::ios_base::trunc);
    for (int i = 0; i < wgsum.size(); i++)
    {
-      cout << "JZ Slice " << i << ": " << wgsum[i] << endl;
+      cout << "JZ Slice " << i << ": " <<  std::setprecision(9) << wgsum[i] << endl;
+      outfile << i << ": " << std::setprecision(9) << wgsum[i] << endl;
    }
-
+return;
    //loop over for weight
    //float min_dist3d = 10;
    //TH1F* l3d_truth = new TH1F("l3d_truth","l3d_truth");
@@ -475,8 +481,8 @@ here:
       if (jentry % 10000 == 0)
          std::cout << jentry << std::endl;
 
-      if (jentry == 10000)
-         break;
+      //if (jentry == 10000)
+      //   break;
 
       b_jet_pt->GetEntry(ientry);
       b_jet_eta->GetEntry(ientry);
@@ -516,10 +522,12 @@ here:
       b_jet_jf_vtx_z->GetEntry(ientry);
       b_jet_btag_ntrk->GetEntry(ientry);
       b_jet_trk_orig->GetEntry(ientry);
+      b_jet_jf_llr->GetEntry(ientry);
       //
       //cout << "line 564" << endl;
       int pos;
 
+      if (ientry == 0){
       fname = myChain->GetCurrentFile()->GetName();
 
       int k = fname.find("Akt4HIJets");
@@ -543,7 +551,7 @@ here:
          cout << "not found" << endl;
          break;
       }
-
+      }
       if (weight == 0)
       {
          cout << "wrong weight" << endl;
