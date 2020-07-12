@@ -466,7 +466,7 @@ here:
       cout << "JZ Slice " << i << ": " <<  std::setprecision(9) << wgsum[i] << endl;
       outfile << i << ": " << std::setprecision(9) << wgsum[i] << endl;
    }
-return;
+
    //loop over for weight
    //float min_dist3d = 10;
    //TH1F* l3d_truth = new TH1F("l3d_truth","l3d_truth");
