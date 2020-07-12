@@ -125,7 +125,7 @@ void initBranches(TChain *myChain)
    myChain->SetBranchStatus("jet_jf_llr", 1);
 }
 
-void bTagJF_condor(std::string filename = "", std::string dataType = "", const bool PbPb = true)
+void bTagJF_condor(std::string filename = "", const char* dataType = "", const bool PbPb = true)
 {
    Float_t ptbins[pt_bin + 1];
    float initial = log(pt_min);
@@ -147,7 +147,7 @@ void bTagJF_condor(std::string filename = "", std::string dataType = "", const b
    std::string chain_name = "bTag_AntiKt4HIJets";
    TChain *myChain = new TChain(chain_name.c_str());
 
-   myChain->Add(filename);
+   myChain->Add(filename.c_str());
 
    int JZ_ID[grid_size];
    int JZ = -1;
