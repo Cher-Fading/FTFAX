@@ -299,7 +299,7 @@ here:
    if (k == std::string::npos)
    {
       cout << "Wrong name" << fname << endl;
-      break;
+      return;
    }
    bool found = false;
    //cout << stoi(fname.substr(k - 9, 8)) << endl;
