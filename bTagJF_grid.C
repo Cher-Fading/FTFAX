@@ -1,5 +1,3 @@
-
-
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -39,8 +37,8 @@ const int count_max = 1500;
 const int pt_min = 50;
 const int pt_max = 600;
 const int pt_jf_min = 50;
-const int pt_max_jf = 600;
-const int pt_bin = 8;
+const int pt_max_jf = 2000;
+const int pt_bin = 16;
 const int min_dist = 0;
 const float min_dist0 = 1;
 const int max_dist = 40;
@@ -85,43 +83,33 @@ void initBranches(TChain *myChain)
 {
 
    myChain->SetBranchStatus("*", 1);
-   //myChain->SetBranchStatus("bH_x",1);
-   //myChain->SetBranchStatus("bH_y",1);
-   //myChain->SetBranchStatus("bH_z",1);
-   //myChain->SetBranchStatus("bH_pt",1);
-   //myChain->SetBranchStatus("bH_phi",1);
-   //myChain->SetBranchStatus("bH_eta",1);
+
+
+
+
+
    myChain->SetBranchStatus("jet_pt", 1);
    myChain->SetBranchStatus("jet_eta", 1);
-
    myChain->SetBranchStatus("jet_truthMatch", 1);
-
    myChain->SetBranchStatus("njets", 1);
    myChain->SetBranchStatus("eventnb", 1);
-
    myChain->SetBranchStatus("Fcal", 1);
-
    myChain->SetBranchStatus("jet_jf_nvtx", 1);
    myChain->SetBranchStatus("jet_jf_vtx_L3D", 1);
    myChain->SetBranchStatus("runnb", 1);
-   myChain->SetBranchStatus("eventnb", 1);
-   myChain->SetBranchStatus("Fcal", 1);
    myChain->SetBranchStatus("PVx", 1);
    myChain->SetBranchStatus("PVy", 1);
    myChain->SetBranchStatus("PVz", 1);
    myChain->SetBranchStatus("truth_PVx", 1);
    myChain->SetBranchStatus("truth_PVy", 1);
    myChain->SetBranchStatus("truth_PVz", 1);
-
    myChain->SetBranchStatus("jet_bH_pdgId", 1);
    myChain->SetBranchStatus("jet_cH_pdgId", 1);
    myChain->SetBranchStatus("jet_bH_Lxy", 1);
    myChain->SetBranchStatus("jet_cH_Lxy", 1);
-
    myChain->SetBranchStatus("jet_bH_x", 1);
    myChain->SetBranchStatus("jet_bH_y", 1);
    myChain->SetBranchStatus("jet_bH_z", 1);
-
    myChain->SetBranchStatus("jet_m", 1);
    myChain->SetBranchStatus("jet_truthMatch", 1);
    myChain->SetBranchStatus("jet_truthPt", 1);
@@ -129,12 +117,13 @@ void initBranches(TChain *myChain)
    myChain->SetBranchStatus("jet_dRminToB", 1);
    myChain->SetBranchStatus("jet_dRminToC", 1);
    myChain->SetBranchStatus("jet_dRminToT", 1);
-
+   myChain->SetBranchStatus("jet_bH_prod_x", 1);
+   myChain->SetBranchStatus("jet_bH_prod_y", 1);
+   myChain->SetBranchStatus("jet_bH_prod_z", 1);
    myChain->SetBranchStatus("jet_jf_vtx_x", 1);
    myChain->SetBranchStatus("jet_jf_vtx_y", 1);
    myChain->SetBranchStatus("jet_jf_vtx_z", 1);
    myChain->SetBranchStatus("closestVtx_L3D", 1);
-
    myChain->SetBranchStatus("jet_btag_ntrk", 1);
    myChain->SetBranchStatus("jet_trk_orig", 1);
 }
@@ -180,11 +169,11 @@ void bTagJF_grid()
             std::string::iterator end_pos = std::remove(item.begin(), item.end(), ' ');
             item.erase(end_pos, item.end());
             //cout << end_pos << endl;
-            cout << item << endl;
+            //cout << item << endl;
             int start_pos = item.find_last_of("=");
-            cout << start_pos << endl;
+            //cout << start_pos << endl;
             fileName = item.substr(start_pos + 1, item.length() - start_pos - 1);
-            cout << fileName << endl;
+            //cout << fileName << endl;
 
             if (fileName.find(".root") == std::string::npos)
             {
@@ -196,7 +185,7 @@ void bTagJF_grid()
                cout << fileName << "file missing" << endl;
                break;
             }
-            cout << fileName << endl;
+            //cout << fileName << endl;
             myChain->Add(fileName.c_str());
          }
          ++linePos;
@@ -207,7 +196,7 @@ void bTagJF_grid()
 
    int JZ_ID[grid_size];
 
-   std::ifstream filej("/usatlas/u/cher97/GetStuff/test.txt");
+   std::ifstream filej("/usatlas/u/cher97/GetStuff/JZ_ID.txt");
    std::string linej;
    while (std::getline(filej, linej))
    {
@@ -215,30 +204,41 @@ void bTagJF_grid()
       std::string itemj;
       int linePosj = 0;
       std::string id;
+      cout << linej << endl;
       while (std::getline(linestreamj, itemj, ' '))
       {
          if (itemj == "")
             continue;
-         if (itemj.find(dataType) == std::string::npos)
-            continue;
-         if (linePosj == 0)
-            id = item;
+         
+         if (linePosj == 0){
+            id = itemj;
+	    cout << "id: " << id << endl;
+}
          if (linePosj == 4)
          {
+	    if (itemj.find(dataType) == std::string::npos) {
+		cout << "Wrong file name" << itemj << endl;
+		goto here;
+	    }
             int k = itemj.find("JZ");
+	    cout << itemj << endl;
             if (k == std::string::npos)
             {
                cout << "Wrong name" << itemj << endl;
                break;
             }
-            JZ_ID[itemj[k + 2] - 48] = std::stoi(ID);
+            JZ_ID[itemj[k + 2] - 48] = std::stoi(id);
+	    cout << itemj[k + 2] - 48 << ": " << id << endl;
          }
+	 ++linePosj;
       }
-      ++linePosj;
+      
    }
 
-   std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
+   here: std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
+
+
 
    std::vector<float> *jet_pt = 0;
    std::vector<float> *jet_eta = 0;
@@ -250,98 +250,79 @@ void bTagJF_grid()
    Float_t truth_PVx;
    Float_t truth_PVy;
    Float_t truth_PVz;
-
    Float_t PVx;
    Float_t PVy;
    Float_t PVz;
-
    std::vector<float> *jet_truthPt = 0;
    std::vector<float> *jet_truthEta = 0;
    std::vector<float> *jet_m = 0;
-
    std::vector<float> *jet_dRminToT = 0;
    std::vector<float> *jet_dRminToC = 0;
    std::vector<float> *jet_dRminToB = 0;
-
    std::vector<std::vector<float>> *jet_bH_prod_x = 0;
    std::vector<std::vector<float>> *jet_bH_prod_y = 0;
    std::vector<std::vector<float>> *jet_bH_prod_z = 0;
-
    std::vector<std::vector<float>> *jet_bH_Lxy = 0;
    std::vector<std::vector<float>> *jet_cH_Lxy = 0;
-   std::vector<std::vector<float>> *jet_bH_pdgId = 0;
-   std::vector<std::vector<float>> *jet_cH_pdgId = 0;
-
+   std::vector<std::vector<int>> *jet_bH_pdgId = 0;
+   std::vector<std::vector<int>> *jet_cH_pdgId = 0;
    std::vector<float> *jet_jf_m = 0;
-
    std::vector<std::vector<float>> *jet_bH_x = 0;
    std::vector<std::vector<float>> *jet_bH_y = 0;
    std::vector<std::vector<float>> *jet_bH_z = 0;
-
    std::vector<float> *jet_jf_nvtx = 0;
    std::vector<std::vector<float>> *jet_jf_vtx_L3D = 0;
-
    std::vector<float> *closestVtx_L3D = 0;
-
    std::vector<std::vector<float>> *jet_jf_vtx_x = 0;
    std::vector<std::vector<float>> *jet_jf_vtx_y = 0;
    std::vector<std::vector<float>> *jet_jf_vtx_z = 0;
-
    std::vector<int> *jet_btag_ntrk = 0;
    vector<vector<int>> *jet_trk_orig = 0;
 
-   TBranch *b_jet_pt, *b_jet_eta, *b_runnb, *b_PVx, *b_PVy, *b_PVz, *b_jet_bH_pdgId, *b_jet_cH_pdgId, *b_bH_Lxy, *b_cH_Lxy, *b_jet_m, *b_jet_truthMatch, *b_njets, *b_eventnb, *b_Fcal, *b_truth_PVx, *b_truth_PVy, *b_truth_PVz, *b_jet_truthEta, *b_jet_truthPt, *b_jet_dRminToB, *b_jet_dRminToC, *b_jet_dRminToT, *b_jet_bH_prod_x, *b_jet_bH_prod_y, *b_jet_bH_prod_z, *b_jet_jf_m, *b_jet_bH_x, *b_jet_bH_y, *b_jet_bH_z, *b_jet_jf_nvtx, *b_jet_jf_vtx_L3D, *b_closestVtx_L3D, *b_jet_jf_vtx_x, *b_jet_jf_vtx_y, *b_jet_jf_vtx_z, *b_jet_btag_ntrk, *b_jet_trk_orig;
+   TBranch *b_jet_pt, *b_jet_eta, *b_runnb, *b_PVx, *b_PVy, *b_PVz, *b_jet_bH_pdgId, *b_jet_cH_pdgId, *b_jet_bH_Lxy, *b_jet_cH_Lxy, *b_jet_m, *b_jet_truthMatch, *b_njets, *b_eventnb, *b_Fcal, *b_truth_PVx, *b_truth_PVy, *b_truth_PVz, *b_jet_truthEta, *b_jet_truthPt, *b_jet_dRminToB, *b_jet_dRminToC, *b_jet_dRminToT, *b_jet_bH_prod_x, *b_jet_bH_prod_y, *b_jet_bH_prod_z, *b_jet_jf_m, *b_jet_bH_x, *b_jet_bH_y, *b_jet_bH_z, *b_jet_jf_nvtx, *b_jet_jf_vtx_L3D, *b_closestVtx_L3D, *b_jet_jf_vtx_x, *b_jet_jf_vtx_y, *b_jet_jf_vtx_z, *b_jet_btag_ntrk, *b_jet_trk_orig;
 
    /*TBranch* b_mcwg;
 	Float_t mcwg = 0;
 	myChain->SetBranchAddress("mcwg", &mcwg, &b_mcwg);*/
 
+
    myChain->SetBranchAddress("jet_pt", &jet_pt, &b_jet_pt);
    myChain->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
-
+   myChain->SetBranchAddress("jet_jf_m", &jet_jf_m, &b_jet_jf_m);
    myChain->SetBranchAddress("jet_truthMatch", &jet_truthMatch, &b_jet_truthMatch);
-
    myChain->SetBranchAddress("njets", &njets, &b_njets);
    myChain->SetBranchAddress("eventnb", &eventnb, &b_eventnb);
-
    myChain->SetBranchAddress("Fcal", &Fcal, &b_Fcal);
-
    myChain->SetBranchAddress("jet_bH_pdgId", &jet_bH_pdgId, &b_jet_bH_pdgId);
    myChain->SetBranchAddress("jet_cH_pdgId", &jet_cH_pdgId, &b_jet_cH_pdgId);
    myChain->SetBranchAddress("jet_bH_Lxy", &jet_bH_Lxy, &b_jet_bH_Lxy);
    myChain->SetBranchAddress("jet_cH_Lxy", &jet_cH_Lxy, &b_jet_cH_Lxy);
-
+   myChain->SetBranchAddress("jet_bH_prod_x", &jet_bH_prod_x, &b_jet_bH_prod_x);
+   myChain->SetBranchAddress("jet_bH_prod_y", &jet_bH_prod_y, &b_jet_bH_prod_y);
+   myChain->SetBranchAddress("jet_bH_prod_z", &jet_bH_prod_z, &b_jet_bH_prod_z);
    myChain->SetBranchAddress("jet_jf_nvtx", &jet_jf_nvtx, &b_jet_jf_nvtx);
    myChain->SetBranchAddress("jet_jf_vtx_L3D", &jet_jf_vtx_L3D, &b_jet_jf_vtx_L3D);
    myChain->SetBranchAddress("runnb", &runnb, &b_runnb);
-   myChain->SetBranchAddress("eventnb", &eventnb, &b_eventnb);
-   myChain->SetBranchAddress("Fcal", &Fcal, &b_Fcal);
    myChain->SetBranchAddress("PVx", &PVx, &b_PVx);
    myChain->SetBranchAddress("PVy", &PVy, &b_PVy);
    myChain->SetBranchAddress("PVz", &PVz, &b_PVz);
    myChain->SetBranchAddress("truth_PVx", &truth_PVx, &b_truth_PVx);
    myChain->SetBranchAddress("truth_PVy", &truth_PVy, &b_truth_PVy);
    myChain->SetBranchAddress("truth_PVz", &truth_PVz, &b_truth_PVz);
-
    myChain->SetBranchAddress("jet_bH_x", &jet_bH_x, &b_jet_bH_x);
    myChain->SetBranchAddress("jet_bH_y", &jet_bH_y, &b_jet_bH_y);
    myChain->SetBranchAddress("jet_bH_z", &jet_bH_z, &b_jet_bH_z);
-
    myChain->SetBranchAddress("jet_m", &jet_m, &b_jet_m);
-   myChain->SetBranchAddress("jet_truthMatch", &jet_truthMatch, &b_jet_truthMatch);
    myChain->SetBranchAddress("jet_truthPt", &jet_truthPt, &b_jet_truthPt);
    myChain->SetBranchAddress("jet_truthEta", &jet_truthEta, &b_jet_truthEta);
    myChain->SetBranchAddress("jet_dRminToB", &jet_dRminToB, &b_jet_dRminToB);
    myChain->SetBranchAddress("jet_dRminToC", &jet_dRminToC, &b_jet_dRminToC);
    myChain->SetBranchAddress("jet_dRminToT", &jet_dRminToT, &b_jet_dRminToT);
-
    myChain->SetBranchAddress("jet_jf_vtx_x", &jet_jf_vtx_x, &b_jet_jf_vtx_x);
    myChain->SetBranchAddress("jet_jf_vtx_y", &jet_jf_vtx_y, &b_jet_jf_vtx_y);
    myChain->SetBranchAddress("jet_jf_vtx_z", &jet_jf_vtx_z, &b_jet_jf_vtx_z);
    myChain->SetBranchAddress("closestVtx_L3D", &closestVtx_L3D, &b_closestVtx_L3D);
-
    myChain->SetBranchAddress("jet_btag_ntrk", &jet_btag_ntrk, &b_jet_btag_ntrk);
-
    myChain->SetBranchAddress("jet_trk_orig", &jet_trk_orig, &b_jet_trk_orig);
 
    if (myChain == 0)
@@ -463,9 +444,10 @@ void bTagJF_grid()
          break;
       }
       bool found = false;
+      //cout << stoi(fname.substr(k - 9, 8)) << endl;
       for (int j = 0; j < grid_size; j++)
       {
-         if (stoi(fname.substr(k - 7, 7)) == JZ_ID[j])
+         if (stoi(fname.substr(k - 9, 8)) == JZ_ID[j])
          {
             found = true;
             wgsum[j] = wgsum[j] + 1;
@@ -475,7 +457,7 @@ void bTagJF_grid()
       {
          cout << fname << endl;
          cout << "not found" << endl;
-         break;
+         return;
       }
    }
    cout << "number of slices:" << wgsum.size() << endl;
@@ -500,9 +482,6 @@ void bTagJF_grid()
 
       if (jentry == 10000)
          break;
-      //float FCal_et = Fcal;
-      //loop over each jet to categorize them into different jet type
-      //rule, if there's no truth jet matched, pass the jet
 
       b_jet_pt->GetEntry(ientry);
       b_jet_eta->GetEntry(ientry);
@@ -514,16 +493,14 @@ void bTagJF_grid()
       b_truth_PVx->GetEntry(ientry);
       b_truth_PVy->GetEntry(ientry);
       b_truth_PVz->GetEntry(ientry);
-
       b_PVx->GetEntry(ientry);
       b_PVy->GetEntry(ientry);
       b_PVz->GetEntry(ientry);
       b_jet_bH_pdgId->GetEntry(ientry);
       b_jet_cH_pdgId->GetEntry(ientry);
-      b_bH_Lxy->GetEntry(ientry);
-      b_cH_Lxy->GetEntry(ientry);
-      b_jet_m->GetEntry(ientry);
-
+      b_jet_bH_Lxy->GetEntry(ientry);
+      b_jet_cH_Lxy->GetEntry(ientry);
+      b_jet_jf_m->GetEntry(ientry);
       b_jet_truthEta->GetEntry(ientry);
       b_jet_truthPt->GetEntry(ientry);
       b_jet_dRminToB->GetEntry(ientry);
@@ -532,7 +509,7 @@ void bTagJF_grid()
       b_jet_bH_prod_x->GetEntry(ientry);
       b_jet_bH_prod_y->GetEntry(ientry);
       b_jet_bH_prod_z->GetEntry(ientry);
-      b_jet_jf_m->GetEntry(ientry);
+      b_jet_m->GetEntry(ientry);
       b_jet_bH_x->GetEntry(ientry);
       b_jet_bH_y->GetEntry(ientry);
       b_jet_bH_z->GetEntry(ientry);
@@ -545,7 +522,7 @@ void bTagJF_grid()
       b_jet_btag_ntrk->GetEntry(ientry);
       b_jet_trk_orig->GetEntry(ientry);
       //
-
+//cout << "line 564" << endl;
       int pos;
 
       fname = myChain->GetCurrentFile()->GetName();
@@ -559,7 +536,7 @@ void bTagJF_grid()
       bool found = false;
       for (int j = 0; j < grid_size; j++)
       {
-         if (stoi(fname.substr(k - 7, 7)) == JZ_ID[j])
+         if (stoi(fname.substr(k - 9, 8)) == JZ_ID[j])
          {
             found = true;
             weight = Weight[j] * Filter[j] / wgsum[j];
@@ -590,24 +567,24 @@ void bTagJF_grid()
                central = f;
          }
       }
+      //cout << "fcal:" << central << Fcal << endl;
 
       for (int j = 0; j < jet_truthMatch->size(); j++)
       {
          if (jetTruth && jet_truthMatch->at(j) != 1)
             continue;
          float jetPt = jetTruth ? (jet_truthPt->at(j) * 1e-3) : (jet_pt->at(j) * 1e-3);
+	 //cout << "jetpt " << jetPt << endl;
+         if (jetPt < pt_min && jetPt > pt_max) continue;
          float jetEta = jetTruth ? (jet_truthEta->at(j)) : (jet_eta->at(j));
          int jetType = 0; //1 for B jet, 2 for C jet, 3 for T jet, 0 for light jet
 
          if (fabs(jetEta) > eta_selection)
             continue;
 
-         if (jet_dRminToT->at(j) < 0.3)
-            jetType = 3; //b hadron particle pt cut 3GeV
-         if (jet_dRminToC->at(j) < 0.3)
-            jetType = 2;
-         if (jet_dRminToB->at(j) < 0.3)
-            jetType = 1;
+         if (jet_dRminToT->at(j) < 0.3) jetType = 3; //b hadron particle pt cut 3GeV
+         if (jet_dRminToC->at(j) < 0.3) jetType = 2;
+         if (jet_dRminToB->at(j) < 0.3) jetType = 1;
 
          //if (jet_cH_pdgId->at(j)[0]!=-99) jetType = 2;
          //if (jet_bH_pdgId->at(j)[0]!=-99) jetType = 1;
@@ -625,7 +602,10 @@ void bTagJF_grid()
             nJets++;
 
             //JF
+	    //cout << jetPt << weight << endl;
             all_jf_b[central]->Fill(jetPt, weight);
+	    if (jet_jf_llr->at(j) != -99) reco_jf_b[central]->Fill(jetPt, weight);
+	    //return;
             /*if (jetPt >= pt_min && jetPt <= pt_max)
             {
                if (jetPt >= pt_jf_min)
@@ -643,6 +623,7 @@ void bTagJF_grid()
          {
             //JF
             all_jf_c[central]->Fill(jetPt, weight);
+if (jet_jf_llr->at(j) != -99) reco_jf_c[central]->Fill(jetPt, weight);
             /*if (jetPt >= pt_min && jetPt <= pt_max)
                allJFc[central] = allJFc[central] + weight;
             if (jet_jf_llr->at(j) != -99)
@@ -657,6 +638,7 @@ void bTagJF_grid()
          {
             //JF
             all_jf_l[central]->Fill(jetPt, weight);
+if (jet_jf_llr->at(j) != -99) reco_jf_l[central]->Fill(jetPt, weight);
             /*if (jetPt >= 20)
                allJFl[central] = allJFl[central] + weight;
             if (jet_jf_llr->at(j) != -99)
@@ -669,13 +651,10 @@ void bTagJF_grid()
 
          jetType = 0;
          //if (jetPt<=pt_min || jetPt>=pt_max) continue;
-         if (jet_dRminToT->at(j) < 0.3)
-            jetType = 3;
+         if (jet_dRminToT->at(j) < 0.3) jetType = 3;
          //if (jet_nGhostTau) jetType = 3;
-         if (jet_cH_pdgId->at(j)[0] != -99)
-            jetType = 2;
-         if (jet_bH_pdgId->at(j)[0] != -99)
-            jetType = 1;
+         if (jet_cH_pdgId->at(j)[0] != -99) jetType = 2;
+         if (jet_bH_pdgId->at(j)[0] != -99) jetType = 1;
          //if (jet_dRminToB->at(j) < 0.3) jetType = 1;
          //int nbhad_t = 0;//number of truth hadrons matched to each jet
          //int nchad_t = 0;
@@ -690,7 +669,11 @@ void bTagJF_grid()
             if (jet_bH_Lxy->at(j)[0] <= -99)
             {
                cout << "出大问题 (big problem) " << endl;
-               continue;
+	       cout << ientry << endl;
+	       cout << fname << endl;
+	       cout << j << endl;
+	       cout << jet_bH_pdgId->at(j)[0] << endl;
+               return;
             }
             if (!(jet_bH_Lxy->at(j)[0] >= 0))
             {
