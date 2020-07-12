@@ -323,9 +323,10 @@ here:
 
    while (getline(inJZ, line))
    {
-      int i = stoi(line.substr(0, 1));
+      int i = std::stoi(line.substr(0, 1));
       if (i == JZ)
-         wgsum = stof(line.substr(3, line.length() - 3));
+         wgsum = std::stof(line.substr(3, line.length() - 3));
+         cout << "wgsum: " << wgsum << endl;
    }
    if (wgsum <= 0)
    {
@@ -334,7 +335,7 @@ here:
    }
 
    inJZ.close();
-   int NUM = stoi(filename.substr(filename.length()-11,6));
+   int NUM = std::stoi(filename.substr(filename.length()-11,6));
 
    TFile *out = TFile::Open(Form("%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
 
