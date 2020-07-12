@@ -1,9 +1,9 @@
 #!/bin/bash
 #input="/atlasgpfs01/usatlas/data/cher97/mc16_5TeV.txt"
-input="/usatlas/u/cher97/GetStuff/$2_root.txt"
+input="../GetStuff/$2_root.txt"
 #input="mc16_5TeV_short.txt"
 
-cd /usatlas/u/cher97/FTFAX
+cd ../FTFAX
 
 #indexline=$1
 linenumber=0

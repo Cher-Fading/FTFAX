@@ -147,12 +147,10 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
    std::string chain_name = "bTag_AntiKt4HIJets";
    TChain *myChain = new TChain(chain_name.c_str());
 
-   myChain->Add(filename.c_str());
-
    int JZ_ID[grid_size];
    int JZ = -1;
 
-   std::ifstream filej("/usatlas/u/cher97/GetStuff/JZ_ID.txt");
+   std::ifstream filej("../GetStuff/JZ_ID.txt");
    std::string linej;
    while (std::getline(filej, linej))
    {
@@ -160,7 +158,7 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
       std::string itemj;
       int linePosj = 0;
       std::string id;
-      cout << linej << endl;
+      //cout << linej << endl;
       while (std::getline(linestreamj, itemj, ' '))
       {
          if (itemj == "")
@@ -169,7 +167,7 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
          if (linePosj == 0)
          {
             id = itemj;
-            cout << "id: " << id << endl;
+            //cout << "id: " << id << endl;
          }
          if (linePosj == 4)
          {
@@ -179,7 +177,7 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
                goto here;
             }
             int k = itemj.find("JZ");
-            cout << itemj << endl;
+            //cout << itemj << endl;
             if (k == std::string::npos)
             {
                cout << "Wrong name" << itemj << endl;
@@ -193,6 +191,59 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
    }
 
 here:
+
+   float wgsum = -1.;
+   //std::vector<int> order;
+
+   int k = filename.find("Akt4HIJets");
+   if (k == std::string::npos)
+   {
+      cout << "Wrong name" << filename << endl;
+      return;
+   }
+   bool found = false;
+   
+   for (int j = 0; j < grid_size; j++)
+   {
+      if (std::stoi(filename.substr(k - 9, 8)) == JZ_ID[j])
+      {
+         found = true;
+         JZ = j;
+      }
+   }
+   if (!found)
+   {
+      cout << filename << endl;
+      cout << "not found" << endl;
+      return;
+   }
+
+   cout << "JZ: " << JZ << endl;
+
+   std::ifstream inJZ(Form("../GetStuff/%s_evtnb.txt", dataType));
+   std::string line;
+
+   while (getline(inJZ, line))
+   {
+      if (wgsum >=0 ) break;
+      int i = std::stoi(line.substr(0, 1));
+      if (i == JZ){
+         wgsum = std::stof(line.substr(3, line.length() - 3));
+         cout << "wgsum: " << wgsum << endl;
+      }
+   }
+   if (wgsum <= 0)
+   {
+      cout << "wgsum issue" << endl;
+      return;
+   }
+
+   inJZ.close();
+   cout << "filename: " << filename << endl;
+   int NUM = std::stoi(filename.substr(filename.length()-11,6));
+   cout << "ID: " << NUM << endl;
+
+   myChain->Add(filename.c_str());
    std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
 
@@ -291,56 +342,6 @@ here:
    Long64_t nentries = myChain->GetEntries();
    std::string fname;
    float weight;
-
-   float wgsum;
-   //std::vector<int> order;
-
-   int k = filename.find("Akt4HIJets");
-   if (k == std::string::npos)
-   {
-      cout << "Wrong name" << fname << endl;
-      return;
-   }
-   bool found = false;
-   
-   for (int j = 0; j < grid_size; j++)
-   {
-      if (std::stoi(filename.substr(k - 9, 8)) == JZ_ID[j])
-      {
-         found = true;
-         JZ = j;
-      }
-   }
-   if (!found)
-   {
-      cout << fname << endl;
-      cout << "not found" << endl;
-      return;
-   }
-
-   cout << "JZ: " << JZ << endl;
-
-   std::ifstream inJZ(Form("../GetStuff/%s_evtnb.txt", dataType));
-   std::string line;
-
-   while (getline(inJZ, line))
-   {
-      int i = std::stoi(line.substr(0, 1));
-      if (i == JZ){
-         wgsum = std::stof(line.substr(3, line.length() - 3));
-         cout << "wgsum: " << wgsum << endl;
-      }
-   }
-   if (wgsum <= 0)
-   {
-      cout << "wgsum issue" << endl;
-      return;
-   }
-
-   inJZ.close();
-   cout << filename.substr(filename.length()-11,6) << endl;
-   int NUM = std::stoi(filename.substr(filename.length()-11,6));
-   cout << "ID: " << NUM << endl;
 
    TFile *out = TFile::Open(Form("%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
 
