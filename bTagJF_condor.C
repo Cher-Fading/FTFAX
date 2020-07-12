@@ -295,7 +295,7 @@ here:
    float wgsum;
    //std::vector<int> order;
 
-   int k = fileName.find("Akt4HIJets");
+   int k = filename.find("Akt4HIJets");
    if (k == std::string::npos)
    {
       cout << "Wrong name" << fname << endl;
@@ -305,7 +305,7 @@ here:
    //cout << stoi(fname.substr(k - 9, 8)) << endl;
    for (int j = 0; j < grid_size; j++)
    {
-      if (stoi(fileName.substr(k - 9, 8)) == JZ_ID[j])
+      if (stoi(filename.substr(k - 9, 8)) == JZ_ID[j])
       {
          found = true;
          JZ = j;
