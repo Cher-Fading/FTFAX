@@ -339,6 +339,7 @@ here:
 
    inJZ.close();
    int NUM = std::stoi(filename.substr(filename.length()-11,6));
+   cout << "ID: " << NUM << endl;
 
    TFile *out = TFile::Open(Form("%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
 
