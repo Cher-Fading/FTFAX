@@ -79,7 +79,7 @@ const float distsize = 2;
 const bool jetTruth = true;
 const bool TRK = false;
 
-void initBranches(TChain *myChain)
+void initBranches(TTree *myChain)
 {
 
    myChain->SetBranchStatus("*", 1);
@@ -145,7 +145,8 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
       initialdist = initialdist + incredist;
    }
    std::string chain_name = "bTag_AntiKt4HIJets";
-   TChain *myChain = new TChain(chain_name.c_str());
+   TFile* f = TFile::Open(filename.c_str(),"READ");
+   TTree *myChain = (TTree*)f->Get(chain_name.c_str());
 
    int JZ_ID[grid_size];
    int JZ = -1;
@@ -243,7 +244,6 @@ here:
    int NUM = std::stoi(filename.substr(filename.length()-11,6));
    cout << "ID: " << NUM << endl;
 
-   myChain->Add(filename.c_str());
    std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
 
@@ -343,7 +343,7 @@ here:
    std::string fname;
    float weight;
 
-   TFile *out = TFile::Open(Form("%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
+   TFile *out = TFile::Open(Form("/atlasgpfs01/usatlas/data/cher97/FTFAX_files/%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
 
    Long64_t nbytes = 0, nb = 0;
 
@@ -398,13 +398,8 @@ here:
    //TH1F* l3d_truth = new TH1F("l3d_truth","l3d_truth");
    for (Long64_t jentry = 0; jentry < nentries; jentry++)
    {
-      Long64_t ientry = myChain->LoadTree(jentry);
-      if (ientry < 0)
-         break;
-
-      if (ientry < 0)
-         break;
-      if (jentry % 10000 == 0)
+     int ientry = jentry; 
+     if (jentry % 10000 == 0)
          std::cout << jentry << std::endl;
 
       //if (jentry == 10000)

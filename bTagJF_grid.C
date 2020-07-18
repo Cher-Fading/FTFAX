@@ -35,7 +35,7 @@ const int Eta_N = sizeof(Eta_range) / sizeof(float) - 1;
 
 const int count_max = 1500;
 const int pt_min = 50;
-const int pt_max = 600;
+const int pt_max = 2000;
 const int pt_jf_min = 50;
 const int pt_max_jf = 2000;
 const int pt_bin = 16;
