@@ -2,6 +2,8 @@
 #include <TStyle.h>
 #include <TCanvas.h>
 #include <fstream>
+#include <vector>
+#include <string>
 
 #include "../atlasstyle-00-04-02/AtlasUtils.h"
 #include "../atlasstyle-00-04-02/AtlasStyle.h"
@@ -246,6 +248,9 @@ here:
 
    std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
+   
+   gInterpreter->GenerateDictionary("vector<vector<float> >", "vector");
+   gInterpreter->GenerateDictionary("vector<vector<int> >", "vector");
 
    std::vector<float> *jet_pt = 0;
    std::vector<float> *jet_eta = 0;

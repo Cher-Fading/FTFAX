@@ -34,7 +34,7 @@ Rank		= CPU_Speed
 
 # Jobs with higher numerical priority will run before jobs 
 # with lower numerical priority (-20 to 20).
-#Priority        = +20
+Priority        = +20
 
 
 #Chris would hate me for this
@@ -45,7 +45,7 @@ GetEnv          = True
 Initialdir   = /usatlas/u/cher97/FTFAX
 
 # Input file given to the job.
-#Input           = /dev/null
+Input           = /dev/null
 
 # The job's stdout is sent to this file.
 Output       = /usatlas/u/cher97/logFiles/out.$(Process)
@@ -82,5 +82,5 @@ accounting_group = group_atlas.uillu
 # job.  If a number is placed after the command (i.e. Queue 15)
 # then the job will be submitted N times.  Use the $(Process)
 # macro to make your input/output and log files unique.
-#Queue 1656
-Queue 1
+#Queue 1632 for WorkingDefaultpp in pnfs
+Queue 1632
