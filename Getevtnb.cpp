@@ -1,4 +1,13 @@
-void	DIR *dir1;
+#include <fstream>
+
+void Getevtnb(const char* dataType = "", bool pnfs = true){
+std::string chain_name = "bTag_AntiKt4HIJets";
+   TTree *myChain = (TTree*)f->Get(chain_name.c_str());
+
+   if (pnfs){
+	   ifstream
+   }
+	DIR *dir1;
 	dirent *pdir;
 	dir1 = opendir(input.c_str());
 	while ((pdir = readdir(dir1)))
