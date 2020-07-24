@@ -205,6 +205,7 @@ here:
       return;
    }
    bool found = false;
+   cout << std::stoi(filename.substr(k - 9, 8)) << endl;
    
    for (int j = 0; j < grid_size; j++)
    {
