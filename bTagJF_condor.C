@@ -177,14 +177,14 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
             if (itemj.find(dataType) == std::string::npos)
             {
                cout << "Wrong file name" << itemj << endl;
-               goto here;
+               continue;
             }
             int k = itemj.find("JZ");
             //cout << itemj << endl;
             if (k == std::string::npos)
             {
                cout << "Wrong name" << itemj << endl;
-               break;
+               return;
             }
             JZ_ID[itemj[k + 2] - 48] = std::stoi(id);
             cout << itemj[k + 2] - 48 << ": " << id << endl;
@@ -193,7 +193,7 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
       }
    }
 
-here:
+//here:
 
    float wgsum = -1.;
    //std::vector<int> order;
