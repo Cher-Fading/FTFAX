@@ -2,8 +2,6 @@
 #include <TStyle.h>
 #include <TCanvas.h>
 #include <fstream>
-#include <vector>
-#include <string>
 
 #include "../atlasstyle-00-04-02/AtlasUtils.h"
 #include "../atlasstyle-00-04-02/AtlasStyle.h"
@@ -81,7 +79,7 @@ const float distsize = 2;
 const bool jetTruth = true;
 const bool TRK = false;
 
-void initBranches(TTree *myChain)
+void initBranches(TChain *myChain)
 {
 
    myChain->SetBranchStatus("*", 1);
@@ -127,7 +125,7 @@ void initBranches(TTree *myChain)
    myChain->SetBranchStatus("jet_jf_llr", 1);
 }
 
-void bTagJF_condor(std::string filename = "", const char* dataType = "", const bool PbPb = true)
+void bTagJF_add(const char* dataType = "", const bool PbPb = true)
 {
    Float_t ptbins[pt_bin + 1];
    float initial = log(pt_min);
@@ -146,9 +144,6 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
       distbins[i] = TMath::Power(TMath::E(), initialdist);
       initialdist = initialdist + incredist;
    }
-   std::string chain_name = "bTag_AntiKt4HIJets";
-   TFile* f = TFile::Open(filename.c_str(),"READ");
-   TTree *myChain = (TTree*)f->Get(chain_name.c_str());
 
    int JZ_ID[grid_size];
    int JZ = -1;
@@ -195,7 +190,7 @@ void bTagJF_condor(std::string filename = "", const char* dataType = "", const b
 
 here:
 
-   float wgsum = -1.;
+   std::vector<float> wgsum;
    //std::vector<int> order;
 
    int k = filename.find("Akt4HIJets");
@@ -246,11 +241,9 @@ here:
    int NUM = std::stoi(filename.substr(filename.length()-11,6));
    cout << "ID: " << NUM << endl;
 
+   myChain->Add(filename.c_str());
    std::cout << "Chain Entries:" << myChain->GetEntries() << std::endl;
    initBranches(myChain);
-   
-   gInterpreter->GenerateDictionary("vector<vector<float> >", "vector");
-   gInterpreter->GenerateDictionary("vector<vector<int> >", "vector");
 
    std::vector<float> *jet_pt = 0;
    std::vector<float> *jet_eta = 0;
@@ -348,7 +341,7 @@ here:
    std::string fname;
    float weight;
 
-   TFile *out = TFile::Open(Form("/atlasgpfs01/usatlas/data/cher97/FTFAX_files/%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
+   TFile *out = TFile::Open(Form("%s%sJZ%d_%drapidityJF%.1f%d.root", Type[PbPb], dataType, JZ, NUM, eta_selection, pt_min), "RECREATE");
 
    Long64_t nbytes = 0, nb = 0;
 
@@ -374,26 +367,26 @@ here:
    for (int i = 0; i < cent_N; i++)
    {
 
-      SV_resolution_b[i] = hotTH1F(Form("SV_resolution_b_cent_%d", i), "Distance between Truth and JF Reco Secondary Vertices", dist_bin2, 0, 80, "", "", myColor[i * 2], 0.3, 21, 1, true);
-      JFV_x[i] = hotTH1F(Form("JFV_x_cent_%d", i), "JF Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kReco, 0.3, 21, 1, true);
-      JFV_y[i] = hotTH1F(Form("JFV_y_cent_%d", i), "JF Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kReco, 0.3, 21, 1, true);
-      JFV_z[i] = hotTH1F(Form("JFV_z_cent_%d", i), "JF Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kReco, 0.3, 21, 1, true);
+      SV_resolution_b[i] = hotTH1F(Form("SV_resolution_b_cent_%d_JZ_%d_%d", i, JZ, NUM), "Distance between Truth and JF Reco Secondary Vertices", dist_bin2, 0, 80, "", "", myColor[i * 2], 0.3, 21, 1, true);
+      JFV_x[i] = hotTH1F(Form("JFV_x_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kReco, 0.3, 21, 1, true);
+      JFV_y[i] = hotTH1F(Form("JFV_y_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kReco, 0.3, 21, 1, true);
+      JFV_z[i] = hotTH1F(Form("JFV_z_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kReco, 0.3, 21, 1, true);
 
-      JFV_truth_x[i] = hotTH1F(Form("JFV_truth_x_cent_%d", i), "JF Truth Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kTruth, 0.3, 21, 1, true);
-      JFV_truth_y[i] = hotTH1F(Form("JFV_truth_y_cent_%d", i), "JF Truth Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kTruth, 0.3, 21, 1, true);
-      JFV_truth_z[i] = hotTH1F(Form("JFV_truth_z_cent_%d", i), "JF Truth Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kTruth, 0.3, 21, 1, true);
+      JFV_truth_x[i] = hotTH1F(Form("JFV_truth_x_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Truth Secondary Vertex x", dist_bin2, min_distxs, max_distxs, "", "", kTruth, 0.3, 21, 1, true);
+      JFV_truth_y[i] = hotTH1F(Form("JFV_truth_y_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Truth Secondary Vertex y", dist_bin2, min_distys, max_distys, "", "", kTruth, 0.3, 21, 1, true);
+      JFV_truth_z[i] = hotTH1F(Form("JFV_truth_z_cent_%d_JZ_%d_%d", i, JZ, NUM), "JF Truth Secondary Vertex z", dist_bin2, min_distzs, max_distzs, "", "", kTruth, 0.3, 21, 1, true);
 
       //dL3d_b[i][j] = hotTH1F(Form("dL3d_b_cent_%d_pT_%d",i,j), "Distribution of L3d difference between Truth and Reco in b-jet", dist_bin, min_dist, max_dist,"","",myColor[j],0.3,21,1,true);
 
       //JetFitter secondary vertices
-      reco_jf_b[i] = hotTH1F(Form("reco_jf_b_cent_%d", i), "Number of jets with JFV reconstructed for b jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
-      all_jf_b[i] = hotTH1F(Form("all_jf_b_cent_%d", i), "Number of b jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      reco_jf_b[i] = hotTH1F(Form("reco_jf_b_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of jets with JFV reconstructed for b jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      all_jf_b[i] = hotTH1F(Form("all_jf_b_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of b jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
 
-      reco_jf_c[i] = hotTH1F(Form("reco_jf_c_cent_%d", i), "Number of jets with JFV reconstructed for c jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
-      all_jf_c[i] = hotTH1F(Form("all_jf_c_cent_%d", i), "Number of c jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      reco_jf_c[i] = hotTH1F(Form("reco_jf_c_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of jets with JFV reconstructed for c jet with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      all_jf_c[i] = hotTH1F(Form("all_jf_c_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of c jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
 
-      reco_jf_l[i] = hotTH1F(Form("reco_jf_l_cent_%d", i), "Number of jets with JFV reconstructed for light jet (fake SV) with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
-      all_jf_l[i] = hotTH1F(Form("all_jf_l_cent_%d", i), "Number of light jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      reco_jf_l[i] = hotTH1F(Form("reco_jf_l_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of jets with JFV reconstructed for light jet (fake SV) with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
+      all_jf_l[i] = hotTH1F(Form("all_jf_l_cent_%d_JZ_%d_%d", i, JZ, NUM), "Number of light jet with with Truth Match versus Truth Jet pt", pt_bin, ptbins, "", "", kBlack, 0.3, 21, 1, true);
    }
 
    int multiB = 0;
@@ -403,8 +396,13 @@ here:
    //TH1F* l3d_truth = new TH1F("l3d_truth","l3d_truth");
    for (Long64_t jentry = 0; jentry < nentries; jentry++)
    {
-     int ientry = jentry; 
-     if (jentry % 10000 == 0)
+      Long64_t ientry = myChain->LoadTree(jentry);
+      if (ientry < 0)
+         break;
+
+      if (ientry < 0)
+         break;
+      if (jentry % 10000 == 0)
          std::cout << jentry << std::endl;
 
       //if (jentry == 10000)
