@@ -85,7 +85,7 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 						cout << "Wrong tag: " << itemj << endl;
 						continue;
 					}
-					int k = itemj.find("JZ0");
+					int k = itemj.find("JZ");
 					//cout << itemj << endl;
 					if (k == std::string::npos)
 					{
@@ -159,7 +159,6 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 				continue;
 			if (!(foldName.find(".root") == std::string::npos))
 				continue;
-			if(foldName.find("JZ0")==std::string::npos) continue;
 			int k = foldName.find("JZ");
 				//cout << itemj << endl;
 				if (k == std::string::npos)
