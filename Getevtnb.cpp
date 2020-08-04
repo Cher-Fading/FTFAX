@@ -18,7 +18,6 @@
 #include "TProfile.h"
 #include "TMath.h"
 #include "TLorentzVector.h"
-#include "IPxDStandaloneTool.h"
 #include "TString.h"
 #include "TGraph.h"
 #include "TGraphAsymmErrors.h"
@@ -147,7 +146,7 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 	}
 	else
 	{
-		ofstream outf("../GetStuff/%s_root.txt", dataType);
+		ofstream outf(Form("../GetStuff/%s_root.txt", dataType),std::ofstream::trunc);
 		DIR *dir1;
 		dirent *pdir;
 		dir1 = opendir(input.c_str());
