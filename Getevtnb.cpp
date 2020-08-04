@@ -99,18 +99,18 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 			}
 		}
 	}
-
+		int JZ = -1;
 	if (pnfs)
 	{
 		std::ifstream fnames(Form("../GetStuff/%s_root_pnfs.txt", dataType));
 		std::string line;
-		int JZ = -1;
+
 		while (std::getline(fnames, line))
 		{
 			int k = line.find("Akt4HIJets");
 			if (k == std::string::npos)
 			{
-				cout << "Wrong name" << filename << endl;
+				cout << "Wrong name in reading: " << line << endl;
 				return;
 			}
 			bool found = false;
@@ -125,7 +125,7 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 			}
 			if (!found)
 			{
-				cout << filename << endl;
+				cout << line << endl;
 				cout << "filename JZ info not found" << endl;
 				return;
 			}
@@ -147,6 +147,7 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 	else
 	{
 		ofstream outf(Form("../GetStuff/%s_root.txt", dataType),std::ofstream::trunc);
+		std::string input = "/pnfs/usatlas.bnl.gov/users/cher97/rucio/user.xiaoning";
 		DIR *dir1;
 		dirent *pdir;
 		dir1 = opendir(input.c_str());
@@ -154,11 +155,20 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 		{
 			std::string foldName = pdir->d_name;
 			cout << pdir->d_name << endl;
-			if (foldName.find(inputFolder) == std::string::npos)
+			if (foldName.find(dataType) == std::string::npos)
 				continue;
 			if (!(foldName.find(".root") == std::string::npos))
 				continue;
-			//if(foldName.find("JZ5")==std::string::npos) continue;
+			if(foldName.find("JZ0")==std::string::npos) continue;
+			int k = foldName.find("JZ");
+				//cout << itemj << endl;
+				if (k == std::string::npos)
+				{
+					cout << "Wrong folder name format: " << foldName << endl;
+					return;
+				}
+				JZ = std::stoi(foldName.substr(k+2,1));
+				JZ_wt[JZ] = 0;
 			cout << "Success:" << pdir->d_name << endl;
 			DIR *dir2;
 			dirent *pdir2;
@@ -168,26 +178,17 @@ void Getevtnb(const char *dataType = "", bool pnfs = true)
 				std::string fName = pdir2->d_name;
 				if (fName.find(".root") == std::string::npos)
 					continue;
-
-				if (fName.find("JZ0") == std::string::npos)
-					continue;
 				f = TFile::Open((input + "/" + foldName + "/" + fName).c_str(), "READ");
 				outf << input << "/" << foldName << "/" << fName << endl;
 				myChain = (TTree *)f->Get(chain_name.c_str());
-				int k = itemj.find("JZ");
-				//cout << itemj << endl;
-				if (k == std::string::npos)
-				{
-					cout << "Wrong name format: " << itemj << endl;
-					return;
-				}
+				
 				int newct = myChain->GetEntries();
 				if (newct < 0 || newct > 3000)
 				{
-					cout << "file: " << line << "; ct: " << newct << endl;
+					cout << "file: " << input << "/" << foldName << "/" << fName << "; ct: " << newct << endl;
 					return;
 				}
-				JZ_wt[line[k + 2] - 48] = JZ_wt[line[k + 2] - 48] + newct;
+				JZ_wt[JZ] = JZ_wt[JZ] + newct;
 				f->Close();
 				f = 0;
 				myChain = 0;
